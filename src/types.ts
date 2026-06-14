@@ -39,6 +39,8 @@ export interface Listing {
   trackingCode: string | null;
   imageUrl: string;
   bidHistory?: Bid[];
+  isAd?: boolean;
+  adTagline?: string;
 }
 
 export interface Bid {
@@ -60,7 +62,7 @@ export interface UserState {
   phone: string;
   avatar: string;
   balance: number;
-  role: 'buyer' | 'bidder' | 'seller';
+  role: 'buyer' | 'bidder' | 'seller' | 'admin';
 }
 
 export interface ValuationReport {

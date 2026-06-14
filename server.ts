@@ -206,9 +206,21 @@ let bids: ServerBid[] = [
 // Users In-Memory Storage Database
 let users = [
   {
+    id: "usr-admin",
+    username: "admin@gmail.com",
+    email: "admin@gmail.com",
+    password: "tiktak1",
+    name: "System Admin",
+    phone: "0799988877",
+    avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=150&q=80",
+    balance: 500000,
+    role: "admin"
+  },
+  {
     id: "usr-demo",
-    username: "demo",
-    password: "password123",
+    username: "demo@gmail.com",
+    email: "demo@gmail.com",
+    password: "tiktak1",
     name: "Mock Investor",
     phone: "0712345678",
     avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80",
@@ -216,14 +228,37 @@ let users = [
     role: "bidder"
   },
   {
+    id: "usr-joji",
+    username: "joji@gmail.com",
+    email: "joji@gmail.com",
+    password: "tiktak1",
+    name: "Joji Techy",
+    phone: "0722334400",
+    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&q=80",
+    balance: 250000,
+    role: "buyer"
+  },
+  {
     id: "usr-wycliffe",
-    username: "wycliffe",
-    password: "password",
+    username: "wycliffe@gmail.com",
+    email: "wycliffe@gmail.com",
+    password: "tiktak1",
     name: "Wycliffe Ominde",
     phone: "0722334455",
     avatar: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=150&q=80",
     balance: 154000,
     role: "buyer"
+  },
+  {
+    id: "usr-jane",
+    username: "jane@gmail.com",
+    email: "jane@gmail.com",
+    password: "tiktak1",
+    name: "Jane Mwangi",
+    phone: "0701234567",
+    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80",
+    balance: 95000,
+    role: "seller"
   }
 ];
 
@@ -321,6 +356,7 @@ app.post("/api/auth/signup", (req, res) => {
   const newUser = {
     id: "usr-" + Math.random().toString(36).substr(2, 9),
     username,
+    email: username,
     password,
     name,
     phone,
@@ -339,7 +375,10 @@ app.post("/api/auth/login", (req, res) => {
     return res.status(400).json({ error: "Please specify both your username and password." });
   }
 
-  const user = users.find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
+  const user = users.find(u => 
+    (u.username.toLowerCase() === username.toLowerCase() || (u.email && u.email.toLowerCase() === username.toLowerCase()))
+    && u.password === password
+  );
   if (!user) {
     return res.status(401).json({ error: "Invalid username or password configuration." });
   }
@@ -368,6 +407,131 @@ app.post("/api/auth/deposit", (req, res) => {
 
   user.balance += depositVal;
   res.json({ balance: user.balance, message: `Successfully deposited KES ${depositVal.toLocaleString()} via simulated M-Pesa STK push callback authorization.` });
+});
+
+// Admin endpoints
+app.get("/api/admin/users", (req, res) => {
+  const user = getAuthUser(req);
+  if (!user || user.role !== "admin") {
+    return res.status(403).json({ error: "Forbidden: Admin access required." });
+  }
+  res.json(users);
+});
+
+app.post("/api/admin/users/create", (req, res) => {
+  const user = getAuthUser(req);
+  if (!user || user.role !== "admin") {
+    return res.status(403).json({ error: "Forbidden: Admin access required." });
+  }
+  const { username, password, name, phone, role, balance, avatar } = req.body;
+  if (!username || !password || !name) {
+    return res.status(400).json({ error: "Username, password and name are required." });
+  }
+
+  const existing = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+  if (existing) {
+    return res.status(400).json({ error: "User already exists with this email/username." });
+  }
+
+  const newUser = {
+    id: "usr-" + Math.random().toString(36).substr(2, 9),
+    username,
+    email: username,
+    password: password || "tiktak1",
+    name,
+    phone: phone || "0700000000",
+    avatar: avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80",
+    balance: parseFloat(balance) || 10000,
+    role: role || "bidder"
+  };
+
+  users.push(newUser);
+  addActivity("listing_created", `Admin registered fresh client proxy profile for "${name}" (${role})`);
+  res.json({ success: true, user: newUser });
+});
+
+app.post("/api/admin/users/:id/update", (req, res) => {
+  const authUser = getAuthUser(req);
+  if (!authUser || authUser.role !== "admin") {
+    return res.status(403).json({ error: "Forbidden: Admin access required." });
+  }
+
+  const targetUser = users.find(u => u.id === req.params.id);
+  if (!targetUser) {
+    return res.status(404).json({ error: "User not found" });
+  }
+
+  const { balance, name, phone, password, role } = req.body;
+  if (balance !== undefined) targetUser.balance = parseFloat(balance);
+  if (name !== undefined) targetUser.name = name;
+  if (phone !== undefined) targetUser.phone = phone;
+  if (password !== undefined) targetUser.password = password;
+  if (role !== undefined) targetUser.role = role;
+
+  res.json({ success: true, user: targetUser });
+});
+
+app.post("/api/admin/users/:id/delete", (req, res) => {
+  const authUser = getAuthUser(req);
+  if (!authUser || authUser.role !== "admin") {
+    return res.status(403).json({ error: "Forbidden: Admin access required." });
+  }
+
+  const index = users.findIndex(u => u.id === req.params.id);
+  if (index === -1) {
+    return res.status(404).json({ error: "User not found" });
+  }
+
+  if (users[index].id === authUser.id) {
+    return res.status(400).json({ error: "You cannot delete your own admin account!" });
+  }
+
+  users.splice(index, 1);
+  res.json({ success: true, message: "User deleted successfully." });
+});
+
+app.post("/api/admin/ads/create", (req, res) => {
+  const user = getAuthUser(req);
+  if (!user || user.role !== "admin") {
+    return res.status(403).json({ error: "Forbidden: Admin access required." });
+  }
+
+  const { title, description, category, imageUrl, adTagline, externalLink } = req.body;
+  if (!title || !description || !category) {
+    return res.status(400).json({ error: "Title, description and category are required for Ads." });
+  }
+
+  const newAd = {
+    id: "ad-" + Math.random().toString(36).substr(2, 9),
+    title,
+    description,
+    category,
+    condition: "New",
+    location: "Sponsored Banner Ads",
+    seller: { id: "usr-admin", name: "System Admin Sponsor", rating: 5.0, avatar: user.avatar },
+    startingBid: 0,
+    reservePrice: 0,
+    currentBid: 0,
+    bidsCount: 0,
+    endTime: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString(), // Ends in 30 days
+    status: "active" as const,
+    winnerId: null,
+    winnerName: null,
+    escrowStatus: "none" as const,
+    deliveryOption: null,
+    deliveryFee: 0,
+    deliveryAddress: null,
+    mpesaPhone: null,
+    mpesaReceipt: null,
+    trackingCode: null,
+    imageUrl: imageUrl || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80",
+    isAd: true,
+    adTagline: adTagline || "Sponsored Ad",
+  };
+
+  listings.unshift(newAd);
+  addActivity("listing_created", `System Admin published sponsored advertisement: "${title}"`);
+  res.json({ success: true, listing: newAd });
 });
 
 // API Endpoints
@@ -407,7 +571,7 @@ app.post("/api/listings", (req, res) => {
   const newListing = {
     id: "lst-" + Math.random().toString(36).substr(2, 9),
     title,
-    description: description || `A high quality second-hand ${title} based out of ${location}. Excellent condition.`,
+    description: description || `A high quality ${title} based out of ${location} in ${condition} condition.`,
     category,
     condition,
     location,
@@ -673,7 +837,7 @@ app.post("/api/gemini/generate-description", async (req, res) => {
   }
 
   const { title, category, condition, location } = req.body;
-  const prompt = `You are a professional conversion-rate copywriter for "Peach", a venture-backed second-hand auction marketplace in Kenya.
+  const prompt = `You are a professional conversion-rate copywriter for "Peach", a venture-backed auction and instant-checkout marketplace for both new and premium pre-owned items in Kenya.
 Write a hyper-compelling, professional, and visually formatted product description for a listing with these details:
 - Title: ${title}
 - Category: ${category}
@@ -681,7 +845,7 @@ Write a hyper-compelling, professional, and visually formatted product descripti
 - Location: ${location}
 
 The description must satisfy these guidelines:
-1. Include a short, bold introductory paragraph highlighting the premium value.
+1. Include a short, bold introductory paragraph highlighting the premium value of this item (whether brand new or excellently pre-owned).
 2. Outline key selling points or specs in bullet points.
 3. Call out why bidding on this item is safe due to Peach's secure Escrow vault protection and instant Safaricom M-Pesa convenience.
 4. Keep the tone friendly, modern, and trustworthy. Use localized Kenyan vibes appropriately (e.g., mention Nairobi, Nyali, etc. if relevant, the general region).
@@ -710,12 +874,12 @@ app.post("/api/gemini/evaluate-item", async (req, res) => {
       recommendedStartingBid: recommendedStart,
       estimatedEscrowFee: 250,
       marketVibe: "High Demand",
-      expertOpinion: "Electronics of this scale sell rapidly in Lavington and Kilimani. Set your starting bid lower to encourage bidding wars, as second-hand goods with a reserves usually fetch up to 30% more on Peach!"
+      expertOpinion: "Electronics of this scale sell rapidly in Lavington and Kilimani. Set your starting bid lower to encourage bidding wars, as premium items (both new and pre-owned) with a reserve usually fetch up to 30% more on Peach!"
     });
   }
 
   const { title, category, condition } = req.body;
-  const prompt = `You are an expert second-hand valuation officer and investor for Kenya's thriving e-commerce economy.
+  const prompt = `You are an expert marketplace valuation officer and pricing strategist for Kenya's thriving e-commerce economy (spanning both new and pre-owned premium assets).
 Evaluate a listing item for Kenya's marketplace:
 - Title: "${title}"
 - Category: "${category}"
@@ -728,7 +892,7 @@ Ensure the output matches exactly this json structure:
   "recommendedStartingBid": <number (price in KES to start the auction, e.g. 55000)>,
   "estimatedEscrowFee": <number (calculated as 1.5% of recommended start or 250, whichever is higher)>,
   "marketVibe": "<string describing demand, e.g. 'Extremely High', 'Moderate', 'Niche'>",
-  "expertOpinion": "<string under 120 words with strategic advice on pricing in Kenya for the second-hand market to maximize buyer friction and bidding traction>"
+  "expertOpinion": "<string under 120 words with strategic advice on pricing in Kenya for the new or pre-loved premium marketplace to maximize buyer friction and bidding traction>"
 }
 
 Return ONLY this parseable JSON block, with no additional markdown block wrapper tags or extra conversational text.`;

@@ -4,8 +4,8 @@ import { ViewportMode, UserState } from "../types";
 interface NavbarProps {
   viewportMode: ViewportMode;
   setViewportMode: (mode: ViewportMode) => void;
-  activeTab: 'marketplace' | 'post';
-  setActiveTab: (tab: 'marketplace' | 'post') => void;
+  activeTab: 'marketplace' | 'post' | 'admin';
+  setActiveTab: (tab: 'marketplace' | 'post' | 'admin') => void;
   currentUser: UserState | null;
   onOpenAuthModal: () => void;
   onLogout: () => void;
@@ -89,6 +89,16 @@ export default function Navbar({
             >
               <Plus className="w-3.5 h-3.5" /> Post Listing
             </button>
+            {currentUser?.role === 'admin' && (
+              <button
+                onClick={() => setActiveTab('admin')}
+                className={`text-xs uppercase tracking-wider font-bold transition-colors flex items-center gap-1 ${
+                  activeTab === 'admin' ? "text-amber-500 font-extrabold animate-pulse" : "text-gray-400 hover:text-amber-500"
+                }`}
+              >
+                <ShieldAlert className="w-3.5 h-3.5 text-amber-500" /> Admin Control
+              </button>
+            )}
           </nav>
         </div>
 

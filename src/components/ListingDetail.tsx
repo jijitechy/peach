@@ -442,7 +442,7 @@ export default function ListingDetail({
               <h3 className="font-display font-bold text-sm text-gray-800">Peach AI Market Valuation</h3>
             </div>
             <p className="text-xs text-gray-500">
-              Get an accurate, VC-grade estimate of this second-hand item's market value in Nairobi based on condition, historical demand, and recommended starting bids.
+              Get an accurate, VC-grade estimate of this premium item's market value in Nairobi based on condition, historical demand, and recommended starting bids.
             </p>
 
             {aiReport ? (
@@ -837,7 +837,7 @@ export default function ListingDetail({
                   <div className="space-y-2 border-t pt-3 border-gray-100">
                     <div className="p-2.5 bg-amber-50 rounded-lg border border-amber-200 text-[10px] text-amber-850 flex gap-1.5">
                       <Info className="w-4 h-4 text-amber-500 shrink-0" />
-                      <span>Pls confirm that the second-hand iPhone is in the expected condition. Releasing funds is irreversible.</span>
+                      <span>Pls confirm that the item is in the expected condition. Releasing funds is irreversible.</span>
                     </div>
 
                     <div className="flex gap-2">

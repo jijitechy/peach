@@ -8,6 +8,7 @@ import { Listing, ViewportMode, UserState } from "./types";
 import Navbar from "./components/Navbar";
 import ListingCard from "./components/ListingCard";
 import ListingDetail from "./components/ListingDetail";
+import AdminPanel from "./components/AdminPanel";
 import AuthModal from "./components/AuthModal";
 import ProfileModal from "./components/ProfileModal";
 import CartModal from "./components/CartModal";
@@ -43,6 +44,7 @@ export default function App() {
   const handleLogout = () => {
     setCurrentUser(null);
     localStorage.removeItem("bidkona_user");
+    setActiveTab("marketplace");
   };
 
   const handleAuthSuccess = (user: UserState) => {
@@ -104,7 +106,7 @@ export default function App() {
     }
   };
 
-  const [activeTab, setActiveTab] = useState<"marketplace" | "post">("marketplace");
+  const [activeTab, setActiveTab] = useState<"marketplace" | "post" | "admin">("marketplace");
   
   // Watchlist & Personal Favorites State
   const [watchlist, setWatchlist] = useState<string[]>([]);
@@ -347,6 +349,19 @@ export default function App() {
     }
 
     switch (activeTab) {
+      case "admin":
+        return (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            <AdminPanel 
+              currentUser={currentUser} 
+              onRefreshListings={fetchListings}
+            />
+          </motion.div>
+        );
+
       case "post":
         return (
           <motion.div 
@@ -506,7 +521,7 @@ export default function App() {
                   value={formDescription}
                   onChange={(e) => setFormDescription(e.target.value)}
                   rows={4}
-                  placeholder="Describe your second-hand goods/services in detail..."
+                  placeholder="Describe your items or services in detail..."
                   className="w-full px-3 py-2 bg-white border border-gray-200 focus:border-brand-primary rounded-xl outline-hidden text-sm font-sans"
                 />
               </div>
@@ -738,6 +753,14 @@ export default function App() {
                     >
                       Sell
                     </button>
+                    {currentUser?.role === 'admin' && (
+                      <button 
+                        onClick={() => { setActiveTab("admin"); setSelectedListingId(null); }}
+                        className={`text-[9px] font-bold px-2 py-1 rounded transition-colors ${activeTab === "admin" ? "bg-amber-500 text-white" : "bg-gray-100 text-[#ea580c] font-extrabold border border-amber-200"}`}
+                      >
+                        Admin
+                      </button>
+                    )}
                   </div>
                 </div>
 

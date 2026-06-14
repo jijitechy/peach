@@ -15,6 +15,11 @@ export default function ListingCard({ listing, onClick, isFavorited, onToggleFav
   const [isExpired, setIsExpired] = useState<boolean>(false);
 
   useEffect(() => {
+    if (listing.isAd) {
+      setTimeLeft("Featured Campaign");
+      setIsExpired(false);
+      return;
+    }
     const calculateTimeLeft = () => {
       const difference = new Date(listing.endTime).getTime() - Date.now();
       if (difference <= 0) {
@@ -25,7 +30,7 @@ export default function ListingCard({ listing, onClick, isFavorited, onToggleFav
 
       const hours = Math.floor(difference / (1000 * 60 * 60));
       const minutes = Math.floor((difference / 1000 / 60) % 60);
-      const seconds = Math.floor((difference / 1000) % 60);
+      const seconds = Math.floor((difference / 1000) % 65);
 
       if (hours > 24) {
         setTimeLeft(`${Math.floor(hours / 24)}d ${hours % 24}h`);
@@ -39,7 +44,7 @@ export default function ListingCard({ listing, onClick, isFavorited, onToggleFav
     calculateTimeLeft();
     const interval = setInterval(calculateTimeLeft, 1000);
     return () => clearInterval(interval);
-  }, [listing.endTime]);
+  }, [listing.endTime, listing.isAd]);
 
   const getConditionColor = (cond: string) => {
     switch (cond.toLowerCase()) {
@@ -90,9 +95,15 @@ export default function ListingCard({ listing, onClick, isFavorited, onToggleFav
         
         {/* Badge status overlay */}
         <div className="absolute top-3 left-3 flex flex-wrap gap-1">
-          <span className={`text-[10px] font-bold tracking-wide uppercase px-2.5 py-1 rounded-full ${getConditionColor(listing.condition)}`}>
-            {listing.condition}
-          </span>
+          {listing.isAd ? (
+            <span className="bg-amber-500 text-white text-[10px] font-bold tracking-wider px-2.5 py-1 rounded-full shadow-xs uppercase">
+              Sponsor Ad
+            </span>
+          ) : (
+            <span className={`text-[10px] font-bold tracking-wide uppercase px-2.5 py-1 rounded-full ${getConditionColor(listing.condition)}`}>
+              {listing.condition}
+            </span>
+          )}
           <span className="bg-gray-900/75 backdrop-blur-xs text-white text-[10px] font-bold tracking-wide uppercase px-2.5 py-1 rounded-full flex items-center gap-1">
             <Tag className="w-3.5 h-3.5" /> {listing.category}
           </span>
@@ -136,29 +147,43 @@ export default function ListingCard({ listing, onClick, isFavorited, onToggleFav
           </p>
         </div>
 
-        <div className="mt-4 pt-3 border-t border-gray-50 flex items-center justify-between">
-          <div>
-            <span className="text-[10px] font-sans text-gray-400 block uppercase tracking-wider font-semibold">Highest Bid</span>
-            <div className="flex items-baseline gap-1">
-              <span className="text-sm font-sans font-extrabold text-[#f97316]">KES</span>
-              <span className="text-base sm:text-lg font-display font-bold text-gray-900">{listing.currentBid.toLocaleString()}</span>
+        {listing.isAd ? (
+          <div className="mt-4 pt-3 border-t border-gray-50 text-left">
+            <span className="text-[10px] font-sans text-orange-600 block uppercase tracking-wider font-extrabold">{listing.adTagline || "Sponsored Corporate Deal"}</span>
+            <span className="text-xs text-gray-400">Exclusive campaign hosted safely on Peach. Click for details.</span>
+          </div>
+        ) : (
+          <div className="mt-4 pt-3 border-t border-gray-50 flex items-center justify-between">
+            <div>
+              <span className="text-[10px] font-sans text-gray-400 block uppercase tracking-wider font-semibold">Highest Bid</span>
+              <div className="flex items-baseline gap-1">
+                <span className="text-sm font-sans font-extrabold text-[#f97316]">KES</span>
+                <span className="text-base sm:text-lg font-display font-bold text-gray-900">{listing.currentBid.toLocaleString()}</span>
+              </div>
+            </div>
+            
+            <div className="text-right">
+              <span className="bg-gray-100 px-2 py-0.5 rounded text-[10px] font-bold text-gray-600 inline-block uppercase">
+                {listing.bidsCount} {listing.bidsCount === 1 ? 'Bid' : 'Bids'}
+              </span>
+              <span className="text-[9px] text-gray-400 block mt-1 font-sans">
+                Reserve: KES {listing.reservePrice.toLocaleString()}
+              </span>
             </div>
           </div>
-          
-          <div className="text-right">
-            <span className="bg-gray-100 px-2 py-0.5 rounded text-[10px] font-bold text-gray-600 inline-block uppercase">
-              {listing.bidsCount} {listing.bidsCount === 1 ? 'Bid' : 'Bids'}
-            </span>
-            <span className="text-[9px] text-gray-400 block mt-1 font-sans">
-              Reserve: KES {listing.reservePrice.toLocaleString()}
-            </span>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Card Action Controls */}
       <div className="px-4 pb-4">
-        {isUserWinner ? (
+        {listing.isAd ? (
+          <button 
+            onClick={onClick}
+            className="w-full py-2.5 text-xs font-bold rounded-xl bg-orange-600 hover:bg-orange-500 text-white flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+          >
+            <span>Learn More & Explore Deal</span>
+          </button>
+        ) : isUserWinner ? (
           <button 
             onClick={onClick}
             className="w-full py-2.5 bg-[#2B7A1C] hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-md transition-transform active:scale-[0.98] flex items-center justify-center gap-1.5"
@@ -169,7 +194,7 @@ export default function ListingCard({ listing, onClick, isFavorited, onToggleFav
         ) : (
           <button 
             onClick={onClick}
-            className={`w-full py-2.5 text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center justify-center gap-1.5 ${
+            className={`w-full py-2.5 text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
               isExpired
                 ? "bg-gray-100 hover:bg-gray-200 text-gray-600"
                 : "bg-gray-900 hover:bg-brand-primary text-white"
