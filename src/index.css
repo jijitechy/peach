@@ -1,0 +1,48 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+  
+  --color-safaricom-green: #2B7A1C;
+  --color-safaricom-light: #44B92C;
+  --color-brand-primary: #f97316; /* Kazi/Bid Orange */
+}
+
+/* Custom visual pulse effects for microinteractions */
+@keyframes trust-glow {
+  0%, 100% { box-shadow: 0 0 10px rgba(43, 122, 28, 0.15); }
+  50% { box-shadow: 0 0 20px rgba(43, 122, 28, 0.35); }
+}
+
+@keyframes bid-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.trust-card {
+  animation: trust-glow 4s infinite ease-in-out;
+}
+
+.bid-bounce {
+  animation: bid-pulse 0.3s ease-in-out;
+}
+
+/* WebKit scrollbar adjustments */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.3);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.5);
+}
