@@ -263,7 +263,10 @@ const SEED_USERS = [
     phone: "0701234567",
     avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80",
     balance: 95000,
-    role: "seller"
+    role: "seller",
+    shopName: "Jane Electronics Hub Ltd",
+    nationalId: "33445566",
+    kraPin: "A001234567Z"
   }
 ];
 
@@ -462,7 +465,7 @@ async function checkAndAwardAuctions() {
 
 // Auth API Endpoints
 app.post("/api/auth/signup", async (req, res) => {
-  const { username, password, name, phone, role } = req.body;
+  const { username, password, name, phone, role, shopName, nationalId, kraPin } = req.body;
   if (!username || !password || !name || !phone) {
     return res.status(400).json({ error: "Missing required registration parameters (username, password, name, phone)." });
   }
@@ -474,6 +477,10 @@ app.post("/api/auth/signup", async (req, res) => {
   }
 
   const userType = role || "buyer";
+  if (userType === "seller" && (!shopName || !nationalId || !kraPin)) {
+    return res.status(400).json({ error: "Sellers must supply a Shop Name, ID Card Number, and KRA PIN." });
+  }
+
   let avatarUrl = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80";
   if (userType === "seller") {
     avatarUrl = "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80";
@@ -490,11 +497,14 @@ app.post("/api/auth/signup", async (req, res) => {
     phone,
     avatar: avatarUrl,
     balance: userType === "seller" ? 0 : 75000, // starting simulation cash for dynamic bidding explore
-    role: userType as 'buyer' | 'seller'
+    role: userType as 'buyer' | 'seller',
+    shopName: userType === "seller" ? shopName : undefined,
+    nationalId: userType === "seller" ? nationalId : undefined,
+    kraPin: userType === "seller" ? kraPin : undefined
   };
 
   await saveUser(newUser);
-  res.status(201).json({ user: { id: newUser.id, username: newUser.username, name: newUser.name, phone: newUser.phone, avatar: newUser.avatar, balance: newUser.balance, role: newUser.role } });
+  res.status(201).json({ user: { id: newUser.id, username: newUser.username, name: newUser.name, phone: newUser.phone, avatar: newUser.avatar, balance: newUser.balance, role: newUser.role, shopName: newUser.shopName, nationalId: newUser.nationalId, kraPin: newUser.kraPin } });
 });
 
 app.post("/api/auth/login", async (req, res) => {
@@ -512,7 +522,7 @@ app.post("/api/auth/login", async (req, res) => {
     return res.status(401).json({ error: "Invalid username or password configuration." });
   }
 
-  res.json({ user: { id: user.id, username: user.username, name: user.name, phone: user.phone, avatar: user.avatar, balance: user.balance, role: user.role } });
+  res.json({ user: { id: user.id, username: user.username, name: user.name, phone: user.phone, avatar: user.avatar, balance: user.balance, role: user.role, shopName: user.shopName, nationalId: user.nationalId, kraPin: user.kraPin } });
 });
 
 app.get("/api/auth/me", async (req, res) => {
@@ -520,7 +530,7 @@ app.get("/api/auth/me", async (req, res) => {
   if (!user) {
     return res.status(401).json({ error: "Unauthorized session state." });
   }
-  res.json({ user: { id: user.id, username: user.username, name: user.name, phone: user.phone, avatar: user.avatar, balance: user.balance, role: user.role } });
+  res.json({ user: { id: user.id, username: user.username, name: user.name, phone: user.phone, avatar: user.avatar, balance: user.balance, role: user.role, shopName: user.shopName, nationalId: user.nationalId, kraPin: user.kraPin } });
 });
 
 app.post("/api/auth/deposit", async (req, res) => {
@@ -705,7 +715,7 @@ app.post("/api/listings", async (req, res) => {
 
   const user = await getAuthUser(req);
   const sellerId = user ? user.id : "usr-demo";
-  const sellerName = user ? user.name : "You (Mock Investor)";
+  const sellerName = user ? (user.shopName || user.name) : "You (Mock Investor)";
   const sellerAvatar = user ? user.avatar : "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&q=80";
 
   const hours = parseFloat(durationHours) || 24;

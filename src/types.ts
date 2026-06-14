@@ -72,6 +72,9 @@ export interface UserState {
   avatar: string;
   balance: number;
   role: 'buyer' | 'seller' | 'admin';
+  shopName?: string;
+  nationalId?: string;
+  kraPin?: string;
 }
 
 export interface ValuationReport {

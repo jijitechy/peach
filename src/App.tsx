@@ -13,6 +13,7 @@ import AuthModal from "./components/AuthModal";
 import ProfileModal from "./components/ProfileModal";
 import CartModal from "./components/CartModal";
 import ActivityTicker from "./components/ActivityTicker";
+import MerchantHub from "./components/MerchantHub";
 import { getLocalListings, createLocalListing } from "./utils/dataStore";
 
 export default function App() {
@@ -52,6 +53,11 @@ export default function App() {
     setCurrentUser(user);
     localStorage.setItem("bidkona_user", JSON.stringify(user));
     fetchListings(); // live sync ratings
+    if (user.role === 'seller') {
+      setActiveTab("merchant");
+    } else {
+      setActiveTab("marketplace");
+    }
   };
 
   const handleEscrowBalanceUpdate = (newBalance: number) => {
@@ -143,7 +149,7 @@ export default function App() {
     reader.readAsDataURL(file);
   };
 
-  const [activeTab, setActiveTab] = useState<"marketplace" | "post" | "admin">("marketplace");
+  const [activeTab, setActiveTab] = useState<"marketplace" | "post" | "admin" | "merchant">("marketplace");
   
   // Watchlist & Personal Favorites State
   const [watchlist, setWatchlist] = useState<string[]>([]);
@@ -387,7 +393,7 @@ export default function App() {
           location: formLocation,
           seller: {
             id: currentUser.id,
-            name: currentUser.name,
+            name: currentUser.shopName || currentUser.name,
             rating: 4.8,
             avatar: currentUser.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80"
           },
@@ -481,6 +487,20 @@ export default function App() {
     }
 
     switch (activeTab) {
+      case "merchant":
+        return (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            <MerchantHub 
+              currentUser={currentUser} 
+              onRefreshListings={fetchListings}
+              onPostNewTabTrigger={() => setActiveTab("post")}
+            />
+          </motion.div>
+        );
+
       case "admin":
         return (
           <motion.div

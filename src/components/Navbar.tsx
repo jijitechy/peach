@@ -4,8 +4,8 @@ import { ViewportMode, UserState } from "../types";
 interface NavbarProps {
   viewportMode: ViewportMode;
   setViewportMode: (mode: ViewportMode) => void;
-  activeTab: 'marketplace' | 'post' | 'admin';
-  setActiveTab: (tab: 'marketplace' | 'post' | 'admin') => void;
+  activeTab: 'marketplace' | 'post' | 'admin' | 'merchant';
+  setActiveTab: (tab: 'marketplace' | 'post' | 'admin' | 'merchant') => void;
   currentUser: UserState | null;
   onOpenAuthModal: () => void;
   onLogout: () => void;
@@ -89,6 +89,16 @@ export default function Navbar({
             >
               <Plus className="w-3.5 h-3.5" /> Post Listing
             </button>
+            {currentUser?.role === 'seller' && (
+              <button
+                onClick={() => setActiveTab('merchant')}
+                className={`text-xs uppercase tracking-wider font-bold transition-colors flex items-center gap-1.5 ${
+                  activeTab === 'merchant' ? "text-[#f97316] font-extrabold" : "text-gray-400 hover:text-[#f97316]"
+                }`}
+              >
+                <Award className="w-3.5 h-3.5 text-orange-500" /> Merchant Hub
+              </button>
+            )}
             {currentUser?.role === 'admin' && (
               <button
                 onClick={() => setActiveTab('admin')}

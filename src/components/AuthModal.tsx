@@ -16,6 +16,9 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
   const [name, setName] = useState<string>('');
   const [phone, setPhone] = useState<string>('');
   const [role, setRole] = useState<'buyer' | 'seller'>('buyer');
+  const [shopName, setShopName] = useState<string>('');
+  const [nationalId, setNationalId] = useState<string>('');
+  const [kraPin, setKraPin] = useState<string>('');
   
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -111,6 +114,20 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
         setErrorMsg('Please provide your Safaricom M-Pesa phone number.');
         return;
       }
+      if (role === 'seller') {
+        if (!shopName.trim()) {
+          setErrorMsg('Merchant sellers must supply an official Shop Name.');
+          return;
+        }
+        if (!nationalId.trim()) {
+          setErrorMsg('Merchant registration requires National ID Card Number.');
+          return;
+        }
+        if (!kraPin.trim()) {
+          setErrorMsg('Merchant registration requires KRA Tax PIN number.');
+          return;
+        }
+      }
     }
 
     setIsSubmitting(true);
@@ -118,7 +135,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
       const endpoint = isLogin ? '/api/auth/login' : '/api/auth/signup';
       const body = isLogin 
         ? { username, password }
-        : { username, password, name, phone, role };
+        : { username, password, name, phone, role, shopName, nationalId, kraPin };
 
       let loggedUser: UserState | null = null;
       try {
@@ -190,7 +207,10 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
             phone: phone,
             role: role,
             balance: role === 'seller' ? 25000 : 75000,
-            avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80'
+            avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
+            shopName: role === 'seller' ? shopName : undefined,
+            nationalId: role === 'seller' ? nationalId : undefined,
+            kraPin: role === 'seller' ? kraPin : undefined
           };
           usersList.push(loggedUser);
           localStorage.setItem(fallbackUsersKey, JSON.stringify(usersList));
@@ -207,6 +227,9 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
           setPassword('');
           setName('');
           setPhone('');
+          setShopName('');
+          setNationalId('');
+          setKraPin('');
           setErrorMsg(null);
           setSuccessMsg(null);
         }, 1000);
@@ -373,6 +396,61 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
                     ))}
                   </div>
                 </div>
+
+                {role === 'seller' && (
+                  <div className="bg-orange-50/30 p-3 rounded-2xl border border-orange-100/60 space-y-3 animate-fadeIn">
+                    <span className="font-bold text-[9px] uppercase tracking-wider text-orange-800 flex items-center gap-1">
+                      <ShieldCheck className="w-3.5 h-3.5" /> Jumia & Alibaba Business Validation
+                    </span>
+
+                    {/* Shop Name */}
+                    <div className="space-y-1">
+                      <label className="font-extrabold text-[#7c2d12] uppercase tracking-wider text-[9px] block">
+                        Registered Shop Name
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={shopName}
+                        onChange={(e) => setShopName(e.target.value)}
+                        placeholder="e.g. Mwangi Tech Electronics Ltd"
+                        className="w-full px-3 py-1.5 bg-white border border-orange-200 focus:border-orange-500 rounded-xl outline-hidden text-xs font-semibold text-gray-800"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      {/* ID Number */}
+                      <div className="space-y-1">
+                        <label className="font-extrabold text-[#7c2d12] uppercase tracking-wider text-[9px] block">
+                          National ID Number
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={nationalId}
+                          onChange={(e) => setNationalId(e.target.value.replace(/[^0-9]/g, ''))}
+                          placeholder="e.g. 33445566"
+                          className="w-full px-3 py-1.5 bg-white border border-orange-200 focus:border-orange-500 rounded-xl outline-hidden text-xs font-mono font-bold text-gray-800"
+                        />
+                      </div>
+
+                      {/* KRA Pin */}
+                      <div className="space-y-1">
+                        <label className="font-extrabold text-[#7c2d12] uppercase tracking-wider text-[9px] block">
+                          KRA TAX PIN
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={kraPin}
+                          onChange={(e) => setKraPin(e.target.value.toUpperCase())}
+                          placeholder="e.g. A012345678Z"
+                          className="w-full px-3 py-1.5 bg-white border border-orange-200 focus:border-orange-500 rounded-xl outline-hidden text-xs font-mono font-bold text-gray-800 animate-uppercase"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </>
             )}
 
