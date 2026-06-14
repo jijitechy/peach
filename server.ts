@@ -3,8 +3,15 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
+import { initializeApp as initializeFirebaseApp } from "firebase/app";
+import { getFirestore, collection, doc, getDocs, getDoc, setDoc, deleteDoc } from "firebase/firestore";
+import firebaseConfig from "./firebase-applet-config.json";
 
 dotenv.config();
+
+// Initialize Firebase App & Firestore
+const firebaseApp = initializeFirebaseApp(firebaseConfig);
+const db = getFirestore(firebaseApp, firebaseConfig.firestoreDatabaseId);
 
 // Initialize Gemini API client if key exists
 const isGeminiAvailable = !!process.env.GEMINI_API_KEY;
@@ -25,8 +32,8 @@ const PORT = 3000;
 
 app.use(express.json());
 
-// In-Memory Database State
-let listings = [
+// In-Memory SEED Database State
+const SEED_LISTINGS = [
   {
     id: "lst-01",
     title: "iPhone 13 Pro (128GB, Sierra Blue)",
@@ -89,8 +96,8 @@ let listings = [
     reservePrice: 6000,
     currentBid: 6800,
     bidsCount: 6,
-    endTime: new Date(Date.now() - 1000 * 60 * 20).toISOString(), // Ended 20 min ago (for demonstration)
-    status: "active", // will be auto-completed on check
+    endTime: new Date(Date.now() - 1000 * 60 * 20).toISOString(), // Ended 20 min ago
+    status: "active",
     winnerId: null,
     winnerName: null,
     escrowStatus: "none",
@@ -189,7 +196,7 @@ interface ServerBid {
   notes?: string;
 }
 
-let bids: ServerBid[] = [
+const SEED_BIDS: ServerBid[] = [
   { id: "bid-1", listingId: "lst-01", bidderName: "Wycliffe", amount: 60000, timestamp: new Date(Date.now() - 1000 * 60 * 200).toISOString(), location: "Mombasa", notes: "Prefers evening pickup" },
   { id: "bid-2", listingId: "lst-01", bidderName: "Jacinta", amount: 63000, timestamp: new Date(Date.now() - 1000 * 60 * 150).toISOString(), location: "Nairobi", notes: "Delivery via Express" },
   { id: "bid-3", listingId: "lst-01", bidderName: "Wycliffe", amount: 65500, timestamp: new Date(Date.now() - 1000 * 60 * 120).toISOString(), location: "Mombasa", notes: "Includes protective case request" },
@@ -201,10 +208,8 @@ let bids: ServerBid[] = [
   { id: "bid-9", listingId: "lst-06", bidderName: "You (Mock Investor)", amount: 29500, timestamp: new Date(Date.now() - 1000 * 60 * 130).toISOString(), location: "Westlands", notes: "Verified buyer escrow" }
 ];
 
-// Helper: Trigger checker periodically and on API calls
-
-// Users In-Memory Storage Database
-let users = [
+// Users In-Memory SEED Storage Database
+const SEED_USERS = [
   {
     id: "usr-admin",
     username: "admin@gmail.com",
@@ -262,18 +267,7 @@ let users = [
   }
 ];
 
-// Helper: Retrieve current user from auth header
-function getAuthUser(req: express.Request) {
-  const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith("Bearer ")) {
-    const userId = authHeader.substring(7);
-    return users.find(u => u.id === userId) || null;
-  }
-  return null;
-}
-
-// Live activity ticker system state
-let activities = [
+const SEED_ACTIVITIES = [
   { id: "act-1", type: "bid_won", message: "Wycliffe Ominde won the bid for 'iPhone 13 Pro (128GB)' at KES 68,500!", timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString() },
   { id: "act-2", type: "bid_placed", message: "Jacinta placed a competitive bid of KES 63,000 for 'iPhone 13 Pro (128GB)'", timestamp: new Date(Date.now() - 1000 * 60 * 150).toISOString() },
   { id: "act-3", type: "listing_created", message: "Amos Mwangi posted 'iPhone 13 Pro (128GB)' in Kilimani, Nairobi", timestamp: new Date(Date.now() - 1000 * 60 * 300).toISOString() },
@@ -281,66 +275,200 @@ let activities = [
   { id: "act-5", type: "listing_created", message: "Jacinta registered a new listing for 'Sony PlayStation 5 Slim' from Westlands", timestamp: new Date(Date.now() - 1000 * 60 * 120).toISOString() }
 ];
 
-function addActivity(type: 'bid_placed' | 'bid_won' | 'listing_created' | 'bid_selected', message: string) {
-  const newAct = {
-    id: "act-" + Math.random().toString(36).substr(2, 9),
-    type,
-    message,
-    timestamp: new Date().toISOString()
-  };
-  activities.unshift(newAct); // Put newest first
-  if (activities.length > 40) {
-    activities.pop(); // Cap at 40 items
+// Asymmetric Firestore CRUD helpers
+async function fetchListings(): Promise<any[]> {
+  try {
+    const querySnapshot = await getDocs(collection(db, "listings"));
+    if (querySnapshot.empty) {
+      console.log("Firestore listings empty, seeding initial marketplace documents...");
+      for (const item of SEED_LISTINGS) {
+        await setDoc(doc(db, "listings", item.id), item);
+      }
+      return SEED_LISTINGS;
+    }
+    const list: any[] = [];
+    querySnapshot.forEach(docSnap => {
+      list.push(docSnap.data());
+    });
+    return list;
+  } catch (err) {
+    console.error("Failed to fetch listings from Firestore:", err);
+    return SEED_LISTINGS;
   }
+}
+
+async function saveListing(listing: any): Promise<void> {
+  try {
+    await setDoc(doc(db, "listings", listing.id), listing);
+  } catch (err) {
+    console.error("Failed to save listing to Firestore:", err);
+  }
+}
+
+async function fetchUsers(): Promise<any[]> {
+  try {
+    const querySnapshot = await getDocs(collection(db, "users"));
+    if (querySnapshot.empty) {
+      console.log("Firestore users empty, seeding default user profiles...");
+      for (const u of SEED_USERS) {
+        await setDoc(doc(db, "users", u.id), u);
+      }
+      return SEED_USERS;
+    }
+    const list: any[] = [];
+    querySnapshot.forEach(docSnap => {
+      list.push(docSnap.data());
+    });
+    return list;
+  } catch (err) {
+    console.error("Failed to fetch users from Firestore:", err);
+    return SEED_USERS;
+  }
+}
+
+async function saveUser(user: any): Promise<void> {
+  try {
+    await setDoc(doc(db, "users", user.id), user);
+  } catch (err) {
+    console.error("Failed to save user to Firestore:", err);
+  }
+}
+
+async function deleteUser(id: string): Promise<void> {
+  try {
+    await deleteDoc(doc(db, "users", id));
+  } catch (err) {
+    console.error("Failed to delete user from Firestore:", err);
+  }
+}
+
+async function fetchBids(): Promise<any[]> {
+  try {
+    const querySnapshot = await getDocs(collection(db, "bids"));
+    if (querySnapshot.empty) {
+      console.log("Firestore bids empty, seeding historical bids...");
+      for (const b of SEED_BIDS) {
+        await setDoc(doc(db, "bids", b.id), b);
+      }
+      return SEED_BIDS;
+    }
+    const list: any[] = [];
+    querySnapshot.forEach(docSnap => {
+      list.push(docSnap.data());
+    });
+    return list;
+  } catch (err) {
+    console.error("Failed to fetch bids from Firestore:", err);
+    return SEED_BIDS;
+  }
+}
+
+async function saveBid(bid: any): Promise<void> {
+  try {
+    await setDoc(doc(db, "bids", bid.id), bid);
+  } catch (err) {
+    console.error("Failed to save bid to Firestore:", err);
+  }
+}
+
+async function fetchActivities(): Promise<any[]> {
+  try {
+    const querySnapshot = await getDocs(collection(db, "activities"));
+    if (querySnapshot.empty) {
+      console.log("Firestore activities empty, seeding initial logs...");
+      for (const act of SEED_ACTIVITIES) {
+        await setDoc(doc(db, "activities", act.id), act);
+      }
+      return SEED_ACTIVITIES;
+    }
+    const list: any[] = [];
+    querySnapshot.forEach(docSnap => {
+      list.push(docSnap.data());
+    });
+    return list.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  } catch (err) {
+    console.error("Failed to fetch activities from Firestore:", err);
+    return SEED_ACTIVITIES;
+  }
+}
+
+async function addActivity(type: 'bid_placed' | 'bid_won' | 'listing_created' | 'bid_selected' | string, message: string) {
+  try {
+    const newAct = {
+      id: "act-" + Math.random().toString(36).substr(2, 9),
+      type,
+      message,
+      timestamp: new Date().toISOString()
+    };
+    await setDoc(doc(db, "activities", newAct.id), newAct);
+  } catch (err) {
+    console.error("Failed to write live activity to Firestore:", err);
+  }
+}
+
+// Helper: Retrieve current user from auth header
+async function getAuthUser(req: express.Request) {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    const userId = authHeader.substring(7);
+    const dbUsers = await fetchUsers();
+    return dbUsers.find(u => u.id === userId) || null;
+  }
+  return null;
 }
 
 // Trigger checker periodically and on API calls
 setInterval(checkAndAwardAuctions, 15000);
 
 // Helper: Check and auto-award expired auctions of active status
-function checkAndAwardAuctions() {
+async function checkAndAwardAuctions() {
   const now = new Date();
-  listings = listings.map(l => {
-    if (l.status === "active" && new Date(l.endTime) <= now) {
-      const listingBids = bids.filter(b => b.listingId === l.id);
-      if (listingBids.length > 0) {
-        // Sort bids descending to get the highest
-        const sortedBids = [...listingBids].sort((a, b) => b.amount - a.amount);
-        const highestBid = sortedBids[0];
-        
-        const matchingUser = users.find(u => u.name === highestBid.bidderName);
-        addActivity("bid_won", `${highestBid.bidderName} won the auction for "${l.title}" at KES ${highestBid.amount.toLocaleString()}!`);
-        return {
-          ...l,
-          status: "completed",
-          winnerId: matchingUser ? matchingUser.id : (highestBid.bidderName === "You (Mock Investor)" ? "usr-demo" : "usr-unknown"),
-          winnerName: highestBid.bidderName,
-          escrowStatus: "pending_payment" // Awaiting checkout/escrow funding
-        };
-      } else {
-        addActivity("bid_won", `Auction for "${l.title}" closed with no active bidders.`);
-        // Completed with no bidders
-        return {
-          ...l,
-          status: "completed",
-          winnerId: null,
-          winnerName: null,
-          escrowStatus: "none"
-        };
+  try {
+    const currentListings = await fetchListings();
+    const currentBids = await fetchBids();
+    const currentUsers = await fetchUsers();
+
+    for (const l of currentListings) {
+      if (l.status === "active" && new Date(l.endTime) <= now) {
+        const listingBids = currentBids.filter(b => b.listingId === l.id);
+        if (listingBids.length > 0) {
+          // Sort bids descending to get the highest
+          const sortedBids = [...listingBids].sort((a, b) => b.amount - a.amount);
+          const highestBid = sortedBids[0];
+          
+          const matchingUser = currentUsers.find(u => u.name === highestBid.bidderName);
+          l.status = "completed";
+          l.winnerId = matchingUser ? matchingUser.id : (highestBid.bidderName === "You (Mock Investor)" ? "usr-demo" : "usr-unknown");
+          l.winnerName = highestBid.bidderName;
+          l.escrowStatus = "pending_payment"; // Awaiting checkout/escrow funding
+
+          await saveListing(l);
+          await addActivity("bid_won", `${highestBid.bidderName} won the auction for "${l.title}" at KES ${highestBid.amount.toLocaleString()}!`);
+        } else {
+          l.status = "completed";
+          l.winnerId = null;
+          l.winnerName = null;
+          l.escrowStatus = "none";
+
+          await saveListing(l);
+          await addActivity("bid_won", `Auction for "${l.title}" closed with no active bidders.`);
+        }
       }
     }
-    return l;
-  });
+  } catch (err) {
+    console.error("Error in checkAndAwardAuctions timer task:", err);
+  }
 }
 
 // Auth API Endpoints
-app.post("/api/auth/signup", (req, res) => {
+app.post("/api/auth/signup", async (req, res) => {
   const { username, password, name, phone, role } = req.body;
   if (!username || !password || !name || !phone) {
     return res.status(400).json({ error: "Missing required registration parameters (username, password, name, phone)." });
   }
 
-  const existing = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+  const currentUsers = await fetchUsers();
+  const existing = currentUsers.find(u => u.username.toLowerCase() === username.toLowerCase());
   if (existing) {
     return res.status(400).json({ error: "Username is already taken by another merchant/bidder." });
   }
@@ -365,17 +493,18 @@ app.post("/api/auth/signup", (req, res) => {
     role: userType as 'buyer' | 'bidder' | 'seller'
   };
 
-  users.push(newUser);
+  await saveUser(newUser);
   res.status(201).json({ user: { id: newUser.id, username: newUser.username, name: newUser.name, phone: newUser.phone, avatar: newUser.avatar, balance: newUser.balance, role: newUser.role } });
 });
 
-app.post("/api/auth/login", (req, res) => {
+app.post("/api/auth/login", async (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) {
     return res.status(400).json({ error: "Please specify both your username and password." });
   }
 
-  const user = users.find(u => 
+  const currentUsers = await fetchUsers();
+  const user = currentUsers.find(u => 
     (u.username.toLowerCase() === username.toLowerCase() || (u.email && u.email.toLowerCase() === username.toLowerCase()))
     && u.password === password
   );
@@ -386,16 +515,16 @@ app.post("/api/auth/login", (req, res) => {
   res.json({ user: { id: user.id, username: user.username, name: user.name, phone: user.phone, avatar: user.avatar, balance: user.balance, role: user.role } });
 });
 
-app.get("/api/auth/me", (req, res) => {
-  const user = getAuthUser(req);
+app.get("/api/auth/me", async (req, res) => {
+  const user = await getAuthUser(req);
   if (!user) {
     return res.status(401).json({ error: "Unauthorized session state." });
   }
   res.json({ user: { id: user.id, username: user.username, name: user.name, phone: user.phone, avatar: user.avatar, balance: user.balance, role: user.role } });
 });
 
-app.post("/api/auth/deposit", (req, res) => {
-  const user = getAuthUser(req);
+app.post("/api/auth/deposit", async (req, res) => {
+  const user = await getAuthUser(req);
   if (!user) {
     return res.status(401).json({ error: "Unauthorized user." });
   }
@@ -406,20 +535,22 @@ app.post("/api/auth/deposit", (req, res) => {
   }
 
   user.balance += depositVal;
+  await saveUser(user);
   res.json({ balance: user.balance, message: `Successfully deposited KES ${depositVal.toLocaleString()} via simulated M-Pesa STK push callback authorization.` });
 });
 
 // Admin endpoints
-app.get("/api/admin/users", (req, res) => {
-  const user = getAuthUser(req);
+app.get("/api/admin/users", async (req, res) => {
+  const user = await getAuthUser(req);
   if (!user || user.role !== "admin") {
     return res.status(403).json({ error: "Forbidden: Admin access required." });
   }
-  res.json(users);
+  const currentUsers = await fetchUsers();
+  res.json(currentUsers);
 });
 
-app.post("/api/admin/users/create", (req, res) => {
-  const user = getAuthUser(req);
+app.post("/api/admin/users/create", async (req, res) => {
+  const user = await getAuthUser(req);
   if (!user || user.role !== "admin") {
     return res.status(403).json({ error: "Forbidden: Admin access required." });
   }
@@ -428,7 +559,8 @@ app.post("/api/admin/users/create", (req, res) => {
     return res.status(400).json({ error: "Username, password and name are required." });
   }
 
-  const existing = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+  const currentUsers = await fetchUsers();
+  const existing = currentUsers.find(u => u.username.toLowerCase() === username.toLowerCase());
   if (existing) {
     return res.status(400).json({ error: "User already exists with this email/username." });
   }
@@ -445,18 +577,19 @@ app.post("/api/admin/users/create", (req, res) => {
     role: role || "bidder"
   };
 
-  users.push(newUser);
-  addActivity("listing_created", `Admin registered fresh client proxy profile for "${name}" (${role})`);
+  await saveUser(newUser);
+  await addActivity("listing_created", `Admin registered fresh client proxy profile for "${name}" (${role})`);
   res.json({ success: true, user: newUser });
 });
 
-app.post("/api/admin/users/:id/update", (req, res) => {
-  const authUser = getAuthUser(req);
+app.post("/api/admin/users/:id/update", async (req, res) => {
+  const authUser = await getAuthUser(req);
   if (!authUser || authUser.role !== "admin") {
     return res.status(403).json({ error: "Forbidden: Admin access required." });
   }
 
-  const targetUser = users.find(u => u.id === req.params.id);
+  const currentUsers = await fetchUsers();
+  const targetUser = currentUsers.find(u => u.id === req.params.id);
   if (!targetUser) {
     return res.status(404).json({ error: "User not found" });
   }
@@ -468,30 +601,32 @@ app.post("/api/admin/users/:id/update", (req, res) => {
   if (password !== undefined) targetUser.password = password;
   if (role !== undefined) targetUser.role = role;
 
+  await saveUser(targetUser);
   res.json({ success: true, user: targetUser });
 });
 
-app.post("/api/admin/users/:id/delete", (req, res) => {
-  const authUser = getAuthUser(req);
+app.post("/api/admin/users/:id/delete", async (req, res) => {
+  const authUser = await getAuthUser(req);
   if (!authUser || authUser.role !== "admin") {
     return res.status(403).json({ error: "Forbidden: Admin access required." });
   }
 
-  const index = users.findIndex(u => u.id === req.params.id);
-  if (index === -1) {
+  const currentUsers = await fetchUsers();
+  const targetUser = currentUsers.find(u => u.id === req.params.id);
+  if (!targetUser) {
     return res.status(404).json({ error: "User not found" });
   }
 
-  if (users[index].id === authUser.id) {
+  if (targetUser.id === authUser.id) {
     return res.status(400).json({ error: "You cannot delete your own admin account!" });
   }
 
-  users.splice(index, 1);
+  await deleteUser(targetUser.id);
   res.json({ success: true, message: "User deleted successfully." });
 });
 
-app.post("/api/admin/ads/create", (req, res) => {
-  const user = getAuthUser(req);
+app.post("/api/admin/ads/create", async (req, res) => {
+  const user = await getAuthUser(req);
   if (!user || user.role !== "admin") {
     return res.status(403).json({ error: "Forbidden: Admin access required." });
   }
@@ -529,40 +664,46 @@ app.post("/api/admin/ads/create", (req, res) => {
     adTagline: adTagline || "Sponsored Ad",
   };
 
-  listings.unshift(newAd);
-  addActivity("listing_created", `System Admin published sponsored advertisement: "${title}"`);
+  await saveListing(newAd);
+  await addActivity("listing_created", `System Admin published sponsored advertisement: "${title}"`);
   res.json({ success: true, listing: newAd });
 });
 
 // API Endpoints
-app.get("/api/listings", (req, res) => {
-  checkAndAwardAuctions();
-  res.json(listings);
+app.get("/api/listings", async (req, res) => {
+  await checkAndAwardAuctions();
+  const currentListings = await fetchListings();
+  res.json(currentListings);
 });
 
 // Fetch Real-time Activity Feeds
-app.get("/api/activities", (req, res) => {
-  res.json(activities);
+
+// Fetch Real-time Activity Feeds
+app.get("/api/activities", async (req, res) => {
+  const currentActivities = await fetchActivities();
+  res.json(currentActivities);
 });
 
-app.get("/api/listings/:id", (req, res) => {
-  checkAndAwardAuctions();
-  const listing = listings.find(l => l.id === req.params.id);
+app.get("/api/listings/:id", async (req, res) => {
+  await checkAndAwardAuctions();
+  const currentListings = await fetchListings();
+  const listing = currentListings.find(l => l.id === req.params.id);
   if (!listing) {
     return res.status(404).json({ error: "Listing not found" });
   }
-  const listingBids = bids.filter(b => b.listingId === req.params.id).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  const currentBids = await fetchBids();
+  const listingBids = currentBids.filter(b => b.listingId === req.params.id).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   res.json({ ...listing, bidHistory: listingBids });
 });
 
 // Create Item Marketplace Listing
-app.post("/api/listings", (req, res) => {
+app.post("/api/listings", async (req, res) => {
   const { title, description, category, condition, location, startingBid, reservePrice, durationHours, imageUrl } = req.body;
   if (!title || !category || !condition || !location || !startingBid) {
     return res.status(400).json({ error: "Missing required listing parameters" });
   }
 
-  const user = getAuthUser(req);
+  const user = await getAuthUser(req);
   const sellerId = user ? user.id : "usr-demo";
   const sellerName = user ? user.name : "You (Mock Investor)";
   const sellerAvatar = user ? user.avatar : "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&q=80";
@@ -594,20 +735,22 @@ app.post("/api/listings", (req, res) => {
     imageUrl: imageUrl || "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=600&q=80"
   };
 
-  listings.unshift(newListing);
-  addActivity("listing_created", `${sellerName} posted a listing for "${title}" in "${location}" starting at KES ${parseFloat(startingBid).toLocaleString()}`);
+  await saveListing(newListing);
+  await addActivity("listing_created", `${sellerName} posted a listing for "${title}" in "${location}" starting at KES ${parseFloat(startingBid).toLocaleString()}`);
   res.status(201).json(newListing);
 });
 
 // Place Bid
-app.post("/api/listings/:id/bid", (req, res) => {
-  checkAndAwardAuctions();
-  const index = listings.findIndex(l => l.id === req.params.id);
-  if (index === -1) {
+app.post("/api/listings/:id/bid", async (req, res) => {
+  await checkAndAwardAuctions();
+  
+  const currentListings = await fetchListings();
+  const listingIndex = currentListings.findIndex(l => l.id === req.params.id);
+  if (listingIndex === -1) {
     return res.status(404).json({ error: "Listing not found" });
   }
 
-  const listing = listings[index];
+  const listing = currentListings[listingIndex];
   if (listing.status !== "active") {
     return res.status(400).json({ error: "This auction is closed for bidding" });
   }
@@ -615,16 +758,12 @@ app.post("/api/listings/:id/bid", (req, res) => {
   const { amount, bidderName, location, notes } = req.body;
   const bidAmount = parseFloat(amount);
   
-  const user = getAuthUser(req);
+  const user = await getAuthUser(req);
   const nameOfBidder = user ? user.name : (bidderName || "You (Mock Investor)");
 
   if (isNaN(bidAmount) || bidAmount <= 0) {
     return res.status(400).json({ error: `Please supply a valid numeric bid amount.` });
   }
-
-  // NOTE: Bidders can place specific prices or bids they want.
-  // We keep a general check, but if the user allows any bid, we ensure it's at least greater than 0.
-  // In our case we will let the bid be verified. Let's make sure it's valid.
 
   if (user && user.balance < bidAmount) {
     return res.status(400).json({ error: `Your balance (KES ${user.balance.toLocaleString()}) list is insufficient. Please deposit funds first.` });
@@ -641,24 +780,23 @@ app.post("/api/listings/:id/bid", (req, res) => {
     notes: notes || "Immediate purchase option"
   };
 
-  bids.push(newBid);
+  await saveBid(newBid);
 
   // Update listing max/current bid
-  listings[index] = {
-    ...listing,
-    currentBid: Math.max(listing.currentBid, bidAmount),
-    bidsCount: listing.bidsCount + 1
-  };
+  listing.currentBid = Math.max(listing.currentBid, bidAmount);
+  listing.bidsCount = listing.bidsCount + 1;
+  await saveListing(listing);
 
-  addActivity("bid_placed", `${nameOfBidder} placed a bid of KES ${bidAmount.toLocaleString()} for "${listing.title}" from "${location || 'Nairobi'}"`);
+  await addActivity("bid_placed", `${nameOfBidder} placed a bid of KES ${bidAmount.toLocaleString()} for "${listing.title}" from "${location || 'Nairobi'}"`);
 
-  res.status(201).json({ listing: listings[index], bid: newBid });
+  res.status(201).json({ listing, bid: newBid });
 });
 
 // Buyer select winning bid manually (Reverse Auction style or Instant buy decision)
-app.post("/api/listings/:id/award-bid", (req, res) => {
-  const index = listings.findIndex(l => l.id === req.params.id);
-  if (index === -1) {
+app.post("/api/listings/:id/award-bid", async (req, res) => {
+  const currentListings = await fetchListings();
+  const listingIndex = currentListings.findIndex(l => l.id === req.params.id);
+  if (listingIndex === -1) {
     return res.status(404).json({ error: "Listing not found" });
   }
 
@@ -667,37 +805,39 @@ app.post("/api/listings/:id/award-bid", (req, res) => {
     return res.status(400).json({ error: "Please specify a valid bid ID to select." });
   }
 
-  const listing = listings[index];
+  const listing = currentListings[listingIndex];
   if (listing.status !== "active") {
     return res.status(400).json({ error: "This listing is already awarded or closed." });
   }
 
-  const targetBid = bids.find(b => b.id === bidId && b.listingId === listing.id);
+  const currentBids = await fetchBids();
+  const targetBid = currentBids.find(b => b.id === bidId && b.listingId === listing.id);
   if (!targetBid) {
     return res.status(404).json({ error: "The selected bid was not found on this listing." });
   }
 
-  const user = getAuthUser(req);
-  const matchingUser = users.find(u => u.name === targetBid.bidderName);
+  const user = await getAuthUser(req);
+  const currentUsers = await fetchUsers();
+  const matchingUser = currentUsers.find(u => u.name === targetBid.bidderName);
 
-  listings[index] = {
-    ...listing,
-    status: "completed",
-    currentBid: targetBid.amount,
-    winnerId: matchingUser ? matchingUser.id : (targetBid.bidderName === "You (Mock Investor)" ? "usr-demo" : "usr-unknown"),
-    winnerName: targetBid.bidderName,
-    escrowStatus: "pending_payment"
-  };
+  listing.status = "completed";
+  listing.currentBid = targetBid.amount;
+  listing.winnerId = matchingUser ? matchingUser.id : (targetBid.bidderName === "You (Mock Investor)" ? "usr-demo" : "usr-unknown");
+  listing.winnerName = targetBid.bidderName;
+  listing.escrowStatus = "pending_payment";
 
-  addActivity("bid_selected", `${listing.seller.name} selected ${targetBid.bidderName}'s bid of KES ${targetBid.amount.toLocaleString()} from "${targetBid.location || 'Nairobi'}" as the official winning bid!`);
+  await saveListing(listing);
 
-  res.json({ status: "success", listing: listings[index] });
+  await addActivity("bid_selected", `${listing.seller.name} selected ${targetBid.bidderName}'s bid of KES ${targetBid.amount.toLocaleString()} from "${targetBid.location || 'Nairobi'}" as the official winning bid!`);
+
+  res.json({ status: "success", listing });
 });
 
 // Simulate M-Pesa STK Push Integration Request for Escrow Deposit
-app.post("/api/listings/:id/checkout", (req, res) => {
-  const index = listings.findIndex(l => l.id === req.params.id);
-  if (index === -1) {
+app.post("/api/listings/:id/checkout", async (req, res) => {
+  const currentListings = await fetchListings();
+  const listingIndex = currentListings.findIndex(l => l.id === req.params.id);
+  if (listingIndex === -1) {
     return res.status(404).json({ error: "Listing not found" });
   }
 
@@ -706,17 +846,15 @@ app.post("/api/listings/:id/checkout", (req, res) => {
     return res.status(400).json({ error: "Missing delivery details or M-Pesa contact phone" });
   }
 
-  const listing = listings[index];
+  const listing = currentListings[listingIndex];
   
-  // Initiating simulation of standard Safaricom Daraja API STK Push
-  listings[index] = {
-    ...listing,
-    mpesaPhone: phone,
-    deliveryOption,
-    deliveryAddress,
-    deliveryFee: parseFloat(deliveryFee) || 350,
-    escrowStatus: "pending_payment"
-  };
+  listing.mpesaPhone = phone;
+  listing.deliveryOption = deliveryOption;
+  listing.deliveryAddress = deliveryAddress;
+  listing.deliveryFee = parseFloat(deliveryFee) || 350;
+  listing.escrowStatus = "pending_payment";
+
+  await saveListing(listing);
 
   res.json({
     status: "stk_push_sent",
@@ -726,30 +864,31 @@ app.post("/api/listings/:id/checkout", (req, res) => {
 });
 
 // Confirm M-Pesa Checkout & Fund Escrow Account
-app.post("/api/listings/:id/confirm-payment", (req, res) => {
-  const index = listings.findIndex(l => l.id === req.params.id);
-  if (index === -1) {
+app.post("/api/listings/:id/confirm-payment", async (req, res) => {
+  const currentListings = await fetchListings();
+  const listingIndex = currentListings.findIndex(l => l.id === req.params.id);
+  if (listingIndex === -1) {
     return res.status(404).json({ error: "Listing not found" });
   }
 
-  const listing = listings[index];
+  const listing = currentListings[listingIndex];
   const receiptCode = "MPESA" + Math.random().toString(36).substring(2, 10).toUpperCase() + "K";
   const trackingCode = "BK-TX-" + Math.floor(1000 + Math.random() * 9000);
 
   // If a registered user is performing this payment simulation, deduct from their balance
-  const user = getAuthUser(req);
+  const user = await getAuthUser(req);
   if (user) {
     const totalCost = listing.currentBid + (listing.deliveryFee || 350);
     user.balance = Math.max(0, user.balance - totalCost);
+    await saveUser(user);
   }
 
   // Funds successfully moved to Peach Escrow Vault hold
-  listings[index] = {
-    ...listing,
-    escrowStatus: "held_in_escrow",
-    mpesaReceipt: receiptCode,
-    trackingCode: trackingCode
-  };
+  listing.escrowStatus = "held_in_escrow";
+  listing.mpesaReceipt = receiptCode;
+  listing.trackingCode = trackingCode;
+
+  await saveListing(listing);
 
   res.json({
     status: "success",
@@ -761,49 +900,46 @@ app.post("/api/listings/:id/confirm-payment", (req, res) => {
 });
 
 // Dispatch Delivery: Move to Sent/Shipped
-app.post("/api/listings/:id/dispatch", (req, res) => {
-  const index = listings.findIndex(l => l.id === req.params.id);
-  if (index === -1) {
+app.post("/api/listings/:id/dispatch", async (req, res) => {
+  const currentListings = await fetchListings();
+  const listingIndex = currentListings.findIndex(l => l.id === req.params.id);
+  if (listingIndex === -1) {
     return res.status(404).json({ error: "Listing not found" });
   }
 
-  const listing = listings[index];
-  listings[index] = {
-    ...listing,
-    escrowStatus: "shipped"
-  };
+  const listing = currentListings[listingIndex];
+  listing.escrowStatus = "shipped";
+  await saveListing(listing);
 
   res.json({ status: "success", message: "Item successfully picked up by Peach courier and in-transit to buyer." });
 });
 
 // Deliver Item (Rider Simulation)
-app.post("/api/listings/:id/deliver", (req, res) => {
-  const index = listings.findIndex(l => l.id === req.params.id);
-  if (index === -1) {
+app.post("/api/listings/:id/deliver", async (req, res) => {
+  const currentListings = await fetchListings();
+  const listingIndex = currentListings.findIndex(l => l.id === req.params.id);
+  if (listingIndex === -1) {
     return res.status(404).json({ error: "Listing not found" });
   }
 
-  const listing = listings[index];
-  listings[index] = {
-    ...listing,
-    escrowStatus: "delivered"
-  };
+  const listing = currentListings[listingIndex];
+  listing.escrowStatus = "delivered";
+  await saveListing(listing);
 
   res.json({ status: "success", message: "Rider confirmed successful delivery. Buyer verification needed to unlock funds." });
 });
 
 // Release Escrow Vault Funds to Seller (Buyer confirm)
-app.post("/api/listings/:id/release-escrow", (req, res) => {
-  const index = listings.findIndex(l => l.id === req.params.id);
-  if (index === -1) {
+app.post("/api/listings/:id/release-escrow", async (req, res) => {
+  const currentListings = await fetchListings();
+  const listingIndex = currentListings.findIndex(l => l.id === req.params.id);
+  if (listingIndex === -1) {
     return res.status(404).json({ error: "Listing not found" });
   }
 
-  const listing = listings[index];
-  listings[index] = {
-    ...listing,
-    escrowStatus: "funds_released"
-  };
+  const listing = currentListings[listingIndex];
+  listing.escrowStatus = "funds_released";
+  await saveListing(listing);
 
   res.json({ 
     status: "success", 
@@ -812,17 +948,16 @@ app.post("/api/listings/:id/release-escrow", (req, res) => {
 });
 
 // Dispute Peach Transaction (Escrow Pause)
-app.post("/api/listings/:id/dispute", (req, res) => {
-  const index = listings.findIndex(l => l.id === req.params.id);
-  if (index === -1) {
+app.post("/api/listings/:id/dispute", async (req, res) => {
+  const currentListings = await fetchListings();
+  const listingIndex = currentListings.findIndex(l => l.id === req.params.id);
+  if (listingIndex === -1) {
     return res.status(404).json({ error: "Listing not found" });
   }
 
-  const listing = listings[index];
-  listings[index] = {
-    ...listing,
-    escrowStatus: "disputed"
-  };
+  const listing = currentListings[listingIndex];
+  listing.escrowStatus = "disputed";
+  await saveListing(listing);
 
   res.json({ status: "success", message: "Transaction disputed. Peach Arbitration Board notified. Funds remain frozen in escrow." });
 });

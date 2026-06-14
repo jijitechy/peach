@@ -1,9 +1,10 @@
 {
-  "apiKey": "mock-api-key-placeholder",
-  "authDomain": "mock-auth-domain-placeholder.firebaseapp.com",
-  "projectId": "mock-project-id-placeholder",
-  "storageBucket": "mock-storage-bucket-placeholder.appspot.com",
-  "messagingSenderId": "1234567890",
-  "appId": "1:1234567890:web:mockappid",
-  "firestoreDatabaseId": "(default)"
+  "projectId": "windy-doodad-krtgb",
+  "appId": "1:397461020275:web:a75c588528ac4fdbb2d406",
+  "apiKey": "AIzaSyB-E7JnEQhcrRblF3ykmW3vbgTxvOWfbR0",
+  "authDomain": "windy-doodad-krtgb.firebaseapp.com",
+  "firestoreDatabaseId": "ai-studio-12b31046-ff10-4150-a5fc-4f50df876c2f",
+  "storageBucket": "windy-doodad-krtgb.firebasestorage.app",
+  "messagingSenderId": "397461020275",
+  "measurementId": ""
 }

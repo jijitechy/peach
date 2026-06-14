@@ -9,7 +9,7 @@ export const isMockFirebase = firebaseConfig.apiKey === 'mock-api-key-placeholde
 const app = initializeApp(firebaseConfig);
 
 // CRITICAL: The app will break without firestoreDatabaseId mapping
-export const db = getFirestore(app);
+export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const auth = getAuth(app);
 
 export enum OperationType {
