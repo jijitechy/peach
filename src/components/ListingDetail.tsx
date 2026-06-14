@@ -39,6 +39,8 @@ export default function ListingDetail({
   const [bidSuccess, setBidSuccess] = useState<boolean>(false);
   const [timeLeft, setTimeLeft] = useState<string>("");
   const [isExpired, setIsExpired] = useState<boolean>(false);
+  const [isAutoBid, setIsAutoBid] = useState<boolean>(false);
+  const [autoBidLimit, setAutoBidLimit] = useState<string>("");
 
   // Gemini Valuation and Insights
   const [isAiLoading, setIsAiLoading] = useState<boolean>(false);
@@ -150,6 +152,12 @@ export default function ListingDetail({
       return;
     }
 
+    const autoBidLimitNum = isAutoBid ? parseFloat(autoBidLimit) : null;
+    if (isAutoBid && (isNaN(autoBidLimitNum!) || autoBidLimitNum! < amountNum)) {
+      setBidError("Your Maximum Auto-Bid Limit must meet or exceed your active Bid offer of KES " + amountNum.toLocaleString());
+      return;
+    }
+
     try {
       let success = false;
       try {
@@ -163,18 +171,21 @@ export default function ListingDetail({
             amount: amountNum, 
             bidderName: currentUser.name,
             location: bidLocation,
-            notes: bidNotes
+            notes: bidNotes,
+            autoBidLimit: autoBidLimitNum
           })
         });
 
         if (response.ok) {
           success = true;
         } else {
-          throw new Error("Direct endpoint failed");
+          const errData = await response.json();
+          setBidError(errData.error || "Direct endpoint failed");
+          return;
         }
       } catch (err) {
         console.warn("Bypassing to browser local database bid entry.", err);
-        const updated = addLocalBid(listingId, amountNum, currentUser, bidLocation, bidNotes);
+        const updated = addLocalBid(listingId, amountNum, currentUser, bidLocation, bidNotes, autoBidLimitNum);
         if (updated) {
           success = true;
           // Deduct client-side simulated wallet
@@ -188,6 +199,8 @@ export default function ListingDetail({
         setBidValue("");
         setBidLocation("");
         setBidNotes("");
+        setIsAutoBid(false);
+        setAutoBidLimit("");
         fetchListingDetail();
         onRefreshListings();
         setTimeout(() => setBidSuccess(false), 3000);
@@ -477,6 +490,38 @@ export default function ListingDetail({
             <p className="text-gray-600 text-sm mt-1.5 leading-relaxed font-sans">{listing.description}</p>
           </div>
 
+          {/* E-Commerce Standard Specifications & Parameters */}
+          <div className="bg-white p-4 rounded-2xl border border-gray-150 space-y-3.5 shadow-2xs">
+            <h4 className="text-xs uppercase font-mono tracking-widest text-gray-400 font-bold">Catalog Specifications</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5 text-xs">
+              <div className="border-b border-gray-100 pb-2 flex justify-between items-center">
+                <span className="text-gray-400">Authentic Brand</span>
+                <span className="font-bold text-gray-800 bg-gray-50 px-2 py-0.5 rounded border border-gray-150">{listing.brand || "Verified Select"}</span>
+              </div>
+              <div className="border-b border-gray-100 pb-2 flex justify-between items-center">
+                <span className="text-gray-400">Sizing / Unit Details</span>
+                <span className="font-bold text-gray-800 bg-gray-50 px-2 py-0.5 rounded border border-gray-150">{listing.size || "Standard Edition"}</span>
+              </div>
+              <div className="border-b border-gray-100 pb-2 flex justify-between items-center col-span-1 sm:col-span-2">
+                <span className="text-gray-400">Warranty Protection</span>
+                <span className="font-bold text-gray-700">{listing.warranty || "Escrow Guarded (7-Day Return/Refund)"}</span>
+              </div>
+              <div className="border-b border-gray-100 pb-2 flex justify-between items-center col-span-1 sm:col-span-2">
+                <span className="text-gray-400">Escrow Increment Standard</span>
+                <span className="font-bold text-orange-600 font-mono">KES {(listing.minIncrement || 500).toLocaleString()}</span>
+              </div>
+            </div>
+            
+            {listing.specs && (
+              <div className="pt-1.5">
+                <span className="text-[10px] text-gray-400 font-mono block uppercase tracking-wider mb-1.5">Technical Specs & Features</span>
+                <p className="bg-gray-50/50 p-2.5 rounded-xl border border-gray-150 text-[11px] text-gray-650 font-mono leading-relaxed whitespace-pre-wrap">
+                  {listing.specs}
+                </p>
+              </div>
+            )}
+          </div>
+
           {/* AI valuation block */}
           <div className="bg-linear-to-ee from-indigo-50/50 to-orange-50/50 p-4 rounded-2xl border border-orange-100/40 relative overflow-hidden">
             <div className="absolute top-0 right-0 p-3 opacity-15">
@@ -600,6 +645,43 @@ export default function ListingDetail({
                       rows={2}
                       className="w-full px-3 py-2 bg-white border border-gray-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 rounded-xl text-xs font-semibold outline-hidden resize-none"
                     />
+                  </div>
+
+                  {/* Auto-Bid Settings */}
+                  <div className="bg-orange-50/40 p-3 rounded-xl border border-orange-100 space-y-3">
+                    <label className="flex items-center gap-2 text-xs font-bold text-orange-950 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={isAutoBid}
+                        onChange={(e) => setIsAutoBid(e.target.checked)}
+                        className="w-4 h-4 text-orange-500 rounded border-gray-300 focus:ring-orange-400 focus:ring-opacity-25"
+                      />
+                      <span>Enable Secure Auto-Bid (Proxy Bidding)</span>
+                    </label>
+
+                    {isAutoBid && (
+                      <div className="space-y-1 sm:space-y-1.5 animate-fadeIn">
+                        <div className="flex justify-between items-center text-[10px] text-orange-850">
+                          <span>Max Auto-Bid Budget (KES)</span>
+                          <span className="font-mono">Increment: +KES {(listing.minIncrement || 500).toLocaleString()}</span>
+                        </div>
+                        <div className="relative rounded-lg shadow-3xs">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <span className="text-gray-400 font-bold text-xs">KES</span>
+                          </div>
+                          <input
+                            type="number"
+                            value={autoBidLimit}
+                            onChange={(e) => setAutoBidLimit(e.target.value)}
+                            placeholder={(listing.currentBid + (listing.minIncrement || 500) * 3).toString()}
+                            className="w-full pl-12 pr-4 py-2 bg-white border border-orange-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 rounded-lg text-xs font-semibold outline-hidden"
+                          />
+                        </div>
+                        <p className="text-[9px] text-gray-400 leading-normal">
+                          The Peach escrow proxy engine will automatically match lower competing bids by raising your offer by KES {(listing.minIncrement || 500).toLocaleString()} increments up to your maximum bid ceiling.
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   {bidError && <p className="text-[11px] text-red-600 font-semibold">{bidError}</p>}

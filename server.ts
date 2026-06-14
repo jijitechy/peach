@@ -230,7 +230,7 @@ const SEED_USERS = [
     phone: "0712345678",
     avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80",
     balance: 29500,
-    role: "bidder"
+    role: "buyer"
   },
   {
     id: "usr-joji",
@@ -473,7 +473,7 @@ app.post("/api/auth/signup", async (req, res) => {
     return res.status(400).json({ error: "Username is already taken by another merchant/bidder." });
   }
 
-  const userType = role || "bidder";
+  const userType = role || "buyer";
   let avatarUrl = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80";
   if (userType === "seller") {
     avatarUrl = "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80";
@@ -490,7 +490,7 @@ app.post("/api/auth/signup", async (req, res) => {
     phone,
     avatar: avatarUrl,
     balance: userType === "seller" ? 0 : 75000, // starting simulation cash for dynamic bidding explore
-    role: userType as 'buyer' | 'bidder' | 'seller'
+    role: userType as 'buyer' | 'seller'
   };
 
   await saveUser(newUser);
@@ -574,7 +574,7 @@ app.post("/api/admin/users/create", async (req, res) => {
     phone: phone || "0700000000",
     avatar: avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80",
     balance: parseFloat(balance) || 10000,
-    role: role || "bidder"
+    role: role || "buyer"
   };
 
   await saveUser(newUser);
@@ -698,7 +698,7 @@ app.get("/api/listings/:id", async (req, res) => {
 
 // Create Item Marketplace Listing
 app.post("/api/listings", async (req, res) => {
-  const { title, description, category, condition, location, startingBid, reservePrice, durationHours, imageUrl } = req.body;
+  const { title, description, category, condition, location, startingBid, reservePrice, durationHours, imageUrl, brand, specs, size, warranty, minIncrement } = req.body;
   if (!title || !category || !condition || !location || !startingBid) {
     return res.status(400).json({ error: "Missing required listing parameters" });
   }
@@ -732,7 +732,12 @@ app.post("/api/listings", async (req, res) => {
     mpesaPhone: null,
     mpesaReceipt: null,
     trackingCode: null,
-    imageUrl: imageUrl || "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=600&q=80"
+    imageUrl: imageUrl || "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=600&q=80",
+    brand: brand || "",
+    specs: specs || "",
+    size: size || "",
+    warranty: warranty || "",
+    minIncrement: parseFloat(minIncrement) || 500
   };
 
   await saveListing(newListing);
@@ -755,11 +760,12 @@ app.post("/api/listings/:id/bid", async (req, res) => {
     return res.status(400).json({ error: "This auction is closed for bidding" });
   }
 
-  const { amount, bidderName, location, notes } = req.body;
+  const { amount, bidderName, location, notes, autoBidLimit } = req.body;
   const bidAmount = parseFloat(amount);
   
   const user = await getAuthUser(req);
   const nameOfBidder = user ? user.name : (bidderName || "You (Mock Investor)");
+  const currentUserId = user ? user.id : "usr-guest";
 
   if (isNaN(bidAmount) || bidAmount <= 0) {
     return res.status(400).json({ error: `Please supply a valid numeric bid amount.` });
@@ -769,7 +775,38 @@ app.post("/api/listings/:id/bid", async (req, res) => {
     return res.status(400).json({ error: `Your balance (KES ${user.balance.toLocaleString()}) list is insufficient. Please deposit funds first.` });
   }
 
-  // Create new bid
+  const parsedLimit = autoBidLimit ? parseFloat(autoBidLimit) : null;
+  if (parsedLimit !== null && parsedLimit < bidAmount) {
+    return res.status(400).json({ error: `Maximum auto-bid limit must meet or exceed your bid of KES ${bidAmount.toLocaleString()}` });
+  }
+
+  // Check if someone else has an active auto-bid limit on this listing
+  let triggerAutoBid = false;
+  let autoBidAmount = 0;
+  let autoBidderName = "";
+  let autoBidderId = "";
+  let autoBidderLocation = "";
+
+  if (listing.autoBidLimit && listing.autoBidderId !== currentUserId) {
+    if (bidAmount < listing.autoBidLimit) {
+      triggerAutoBid = true;
+      const minInc = listing.minIncrement || 1000;
+      autoBidAmount = Math.min(listing.autoBidLimit, bidAmount + minInc);
+      autoBidderName = listing.autoBidderName || "System AutoBidder";
+      autoBidderId = listing.autoBidderId;
+      autoBidderLocation = listing.autoBidLocation || "Nairobi";
+    } else {
+      // Outbid! Clear existing auto bidder on listing
+      const oldBidder = listing.autoBidderName || "Previous AutoBidder";
+      listing.autoBidLimit = null;
+      listing.autoBidderId = null;
+      listing.autoBidderName = null;
+      listing.autoBidLocation = null;
+      await addActivity("bid_placed", `⚠️ ${oldBidder}'s automatic bid limit was exceeded by ${nameOfBidder}'s higher bid.`);
+    }
+  }
+
+  // Create new manual bid
   const newBid = {
     id: "bid-" + Math.random().toString(36).substr(2, 9),
     listingId: listing.id,
@@ -785,11 +822,45 @@ app.post("/api/listings/:id/bid", async (req, res) => {
   // Update listing max/current bid
   listing.currentBid = Math.max(listing.currentBid, bidAmount);
   listing.bidsCount = listing.bidsCount + 1;
-  await saveListing(listing);
+  listing.winnerId = currentUserId;
+  listing.winnerName = nameOfBidder;
 
+  // Save auto-bid config of current user if they specified one
+  if (parsedLimit !== null) {
+    listing.autoBidLimit = parsedLimit;
+    listing.autoBidderId = currentUserId;
+    listing.autoBidderName = nameOfBidder;
+    listing.autoBidLocation = location || "Nairobi";
+  }
+
+  await saveListing(listing);
   await addActivity("bid_placed", `${nameOfBidder} placed a bid of KES ${bidAmount.toLocaleString()} for "${listing.title}" from "${location || 'Nairobi'}"`);
 
-  res.status(201).json({ listing, bid: newBid });
+  // If auto-bid is triggered, create resulting auto-bid
+  let resultingBid = newBid;
+  if (triggerAutoBid) {
+    const autoBidObj = {
+      id: "bid-" + Math.random().toString(36).substr(2, 9),
+      listingId: listing.id,
+      bidderName: autoBidderName,
+      amount: autoBidAmount,
+      timestamp: new Date().toISOString(),
+      location: autoBidderLocation,
+      notes: "🤖 Secure Proxy Auto-Bid System"
+    };
+    await saveBid(autoBidObj);
+
+    listing.currentBid = autoBidAmount;
+    listing.bidsCount = listing.bidsCount + 1;
+    listing.winnerId = autoBidderId;
+    listing.winnerName = autoBidderName;
+    await saveListing(listing);
+
+    await addActivity("bid_placed", `🤖 System Auto-Bid: ${autoBidderName} automatically outbid opposition at KES ${autoBidAmount.toLocaleString()} for "${listing.title}"`);
+    resultingBid = autoBidObj;
+  }
+
+  res.status(201).json({ listing, bid: resultingBid });
 });
 
 // Buyer select winning bid manually (Reverse Auction style or Instant buy decision)
@@ -1026,25 +1097,35 @@ app.post("/api/gemini/evaluate-item", async (req, res) => {
       recommendedStartingBid: recommendedStart,
       estimatedEscrowFee: 250,
       marketVibe: "High Demand",
-      expertOpinion: "Electronics of this scale sell rapidly in Lavington and Kilimani. Set your starting bid lower to encourage bidding wars, as premium items (both new and pre-owned) with a reserve usually fetch up to 30% more on Peach!"
+      expertOpinion: "Electronics of this scale sell rapidly in Lavington and Kilimani. Set your starting bid lower to encourage bidding wars, as premium items (both new and pre-owned) with a reserve usually fetch up to 30% more on Peach!",
+      brand: "HP",
+      specs: "Core i7 Quad-Core, 16GB Dual-Channel DDR4 RAM, 512GB NVMe M.2 SSD",
+      size: "14.0 Inch Full HD IPS Screen, 1.48 kg Weight",
+      warranty: "12 Months Official Provider Warranty",
+      suggestedIncrement: 1000
     });
   }
 
   const { title, category, condition } = req.body;
-  const prompt = `You are an expert marketplace valuation officer and pricing strategist for Kenya's thriving e-commerce economy (spanning both new and pre-owned premium assets).
+  const prompt = `You are an expert marketplace valuation officer, pricing strategist, and cataloger for Kenya's thriving e-commerce economy (spanning both new and pre-owned premium assets).
 Evaluate a listing item for Kenya's marketplace:
 - Title: "${title}"
 - Category: "${category}"
 - Condition: "${condition}"
 
-Please return a JSON response with pricing suggestions in KES (Kenyan Shillings) alongside localized, venture-grade market feedback. 
+Please return a JSON response with pricing suggestions in KES (Kenyan Shillings) alongside catalog details (brand, specs, size, warranty, minimum bidding increment) and localized strategic market feedback. 
 Ensure the output matches exactly this json structure:
 {
   "estimatedNewPrice": <number (price in KES for buying this brand-new in Kenya, e.g. 100000)>,
   "recommendedStartingBid": <number (price in KES to start the auction, e.g. 55000)>,
   "estimatedEscrowFee": <number (calculated as 1.5% of recommended start or 250, whichever is higher)>,
   "marketVibe": "<string describing demand, e.g. 'Extremely High', 'Moderate', 'Niche'>",
-  "expertOpinion": "<string under 120 words with strategic advice on pricing in Kenya for the new or pre-loved premium marketplace to maximize buyer friction and bidding traction>"
+  "expertOpinion": "<string under 120 words with strategic advice on pricing in Kenya for the new or pre-loved premium marketplace to maximize buyer friction and bidding traction>",
+  "brand": "<string Suggesting the brand name, e.g. 'HP', 'Sony', 'Apple', 'Nike', 'Samsung'>",
+  "specs": "<string Strategic tech specs or hardware/material features of this item, e.g. 'Core i7, 16GB RAM, 512GB SSD' or '100% Breathable cotton, double-stitched joints'>",
+  "size": "<string Preferred standard fashion size or dimensions/weight, e.g. 'Medium / 32W', '14.0\" Screen, 1.4kg', 'Standard PS5 Disc height'>",
+  "warranty": "<string Suggest warranty e.g., '12 Months Official Apple Warranty', '6 Months Merchant warranty', or 'None (Sold as seen)' if used/fair>",
+  "suggestedIncrement": <number Suggested bidding increment e.g. 500, 1000, or 2000>
 }
 
 Return ONLY this parseable JSON block, with no additional markdown block wrapper tags or extra conversational text.`;
@@ -1069,7 +1150,12 @@ Return ONLY this parseable JSON block, with no additional markdown block wrapper
       recommendedStartingBid: 25000,
       estimatedEscrowFee: 375,
       marketVibe: "Active",
-      expertOpinion: `Valuation compiled using automated Nairobi market index. Good demand of ${title} in the local market. Ensure clear pictures of any physical scratches to foster full trust via our escrow verification system.`
+      expertOpinion: `Valuation compiled using automated Nairobi market index. Good demand of ${title} in the local market. Ensure clear pictures of any physical scratches to foster full trust via our escrow verification system.`,
+      brand: "Generic",
+      specs: "Meticulously inspected premium asset. Ready-to-go setup.",
+      size: "Standard size",
+      warranty: "None (Sold as seen)",
+      suggestedIncrement: 500
     });
   }
 });

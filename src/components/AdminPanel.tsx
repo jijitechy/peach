@@ -20,7 +20,7 @@ interface AdminUser {
   phone: string;
   avatar: string;
   balance: number;
-  role: 'buyer' | 'bidder' | 'seller' | 'admin';
+  role: 'buyer' | 'seller' | 'admin';
   password?: string;
 }
 
@@ -34,7 +34,7 @@ export default function AdminPanel({ currentUser, onRefreshListings }: AdminPane
   const [newEmail, setNewEmail] = useState<string>('');
   const [newName, setNewName] = useState<string>('');
   const [newPhone, setNewPhone] = useState<string>('');
-  const [newRole, setNewRole] = useState<'buyer' | 'bidder' | 'seller'>('buyer');
+  const [newRole, setNewRole] = useState<'buyer' | 'seller'>('buyer');
   const [newBalance, setNewBalance] = useState<string>('50000');
   const [newAvatar, setNewAvatar] = useState<string>('');
   const [newPassword, setNewPassword] = useState<string>('tiktak1');
@@ -590,8 +590,8 @@ export default function AdminPanel({ currentUser, onRefreshListings }: AdminPane
 
               <div className="sm:col-span-2 space-y-1.5 pt-2">
                 <label className="font-bold text-gray-550 uppercase tracking-wider text-[10px] block text-center">Registration Type & Simulated Bid Role</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {(['buyer', 'bidder', 'seller'] as const).map((r) => (
+                <div className="grid grid-cols-2 gap-2">
+                  {(['buyer', 'seller'] as const).map((r) => (
                     <button
                       key={r}
                       type="button"

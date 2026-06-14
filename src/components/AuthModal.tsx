@@ -15,7 +15,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
   const [password, setPassword] = useState<string>('');
   const [name, setName] = useState<string>('');
   const [phone, setPhone] = useState<string>('');
-  const [role, setRole] = useState<'buyer' | 'bidder' | 'seller'>('bidder');
+  const [role, setRole] = useState<'buyer' | 'seller'>('buyer');
   
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -141,7 +141,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
         if (!localStorage.getItem(fallbackUsersKey)) {
           const list = [
             { id: 'usr-01', username: 'joji@gmail.com', name: 'Joji Techy', phone: '0711223344', role: 'buyer', balance: 250000, avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&q=80' },
-            { id: 'usr-02', username: 'demo@gmail.com', name: 'Mock Investor', phone: '0722334455', role: 'bidder', balance: 29500, avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80' },
+            { id: 'usr-02', username: 'demo@gmail.com', name: 'Mock Investor', phone: '0722334455', role: 'buyer', balance: 29500, avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80' },
             { id: 'usr-03', username: 'jane@gmail.com', name: 'Jane Mwangi', phone: '0733445566', role: 'seller', balance: 95000, avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80' },
             { id: 'usr-04', username: 'wycliffe@gmail.com', name: 'Wycliffe', phone: '0744556677', role: 'buyer', balance: 154000, avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=150&q=80' },
             { id: 'usr-admin', username: 'admin@gmail.com', name: 'Peach Administrator', phone: '0700000000', role: 'admin', balance: 5000000, avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=150&q=80' }
@@ -168,7 +168,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
                 username: username.toLowerCase(),
                 name: username.split('@')[0],
                 phone: '0712345678',
-                role: 'bidder',
+                role: 'buyer',
                 balance: 75000,
                 avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80'
               };
@@ -295,37 +295,19 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
             </div>
           )}
 
-          {/* Quick Smart Logins Panel */}
+          {/* Quick Sandbox Hint */}
           {isLogin && (
-            <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100">
-              <span className="text-[9px] font-mono font-bold text-gray-450 uppercase tracking-widest block mb-2 flex items-center gap-1">
-                <Users className="w-3.5 h-3.5 text-orange-500" /> Easy 1-Click Client profiles
+            <div className="bg-orange-50/50 p-3 rounded-2xl border border-orange-100 text-[11px] text-orange-850">
+              <span className="font-bold flex items-center gap-1 mb-1">
+                <Sparkles className="w-3.5 h-3.5 text-orange-600" /> Sandbox Credentials Tip
               </span>
-              
-              <div className="grid grid-cols-2 gap-2">
-                {currentDummyAccounts.map((acc) => (
-                  <button
-                    key={acc.email}
-                    type="button"
-                    onClick={() => handleQuickLogin(acc.email)}
-                    className="p-1.5 rounded-xl border border-gray-200 bg-white hover:bg-orange-50/50 hover:border-orange-300 transition-all text-left flex items-center gap-2 cursor-pointer outline-hidden group"
-                  >
-                    <img 
-                      src={acc.avatar} 
-                      alt={acc.name} 
-                      className="w-7 h-7 rounded-full object-cover shrink-0 border border-gray-100 group-hover:scale-105 transition-transform" 
-                      referrerPolicy="no-referrer"
-                    />
-                    <div className="min-w-0">
-                      <p className="text-[10px] font-bold text-gray-800 leading-tight truncate">{acc.name}</p>
-                      <p className="text-[8px] text-gray-400 truncate tracking-tight">{acc.email}</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-              <p className="text-[9px] text-center text-gray-400 mt-1.5 font-mono">
-                🔑 Standard password for all: <strong className="text-gray-700">tiktak1</strong>
+              <p className="leading-normal">
+                You can register your own personal working profile, or use the pre-seeded admin profile:
               </p>
+              <div className="mt-1.5 font-mono text-[9.5px] bg-white/80 p-2 rounded-lg border border-orange-100 flex justify-between items-center">
+                <span>Email: <strong className="text-gray-800">admin@gmail.com</strong></span>
+                <span>Pass: <strong className="text-gray-800">tiktak1</strong></span>
+              </div>
             </div>
           )}
 
@@ -374,8 +356,8 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
                   <label className="font-bold text-gray-500 uppercase tracking-wider text-[10px] block">
                     Registration Type
                   </label>
-                  <div className="grid grid-cols-3 gap-1.5">
-                    {(['bidder', 'buyer', 'seller'] as const).map((r) => (
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {(['buyer', 'seller'] as const).map((r) => (
                       <button
                         key={r}
                         type="button"
@@ -383,10 +365,10 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
                         className={`py-1.5 rounded-lg font-bold border capitalize transition-all text-[9.5px] ${
                           role === r 
                             ? 'border-[#f97316] bg-orange-50 text-orange-700' 
-                            : 'border-gray-200 text-gray-400 bg-white hover:bg-gray-55'
+                            : 'border-gray-200 text-gray-400 bg-white hover:bg-gray-50'
                         }`}
                       >
-                        {r}
+                        {r === 'buyer' ? 'Buyer / Bidder' : 'Seller / Merchant'}
                       </button>
                     ))}
                   </div>
@@ -435,7 +417,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
               <div className="bg-amber-50 border border-amber-200 p-2 rounded-lg text-amber-900 leading-normal text-[9px] flex items-start gap-1 font-semibold">
                 <Info className="w-3 h-3 text-amber-600 shrink-0 mt-0.5" />
                 <span>
-                  <strong>Sandbox Promo:</strong> Bidders claim <strong>KES 75,000</strong> immediately.
+                  <strong>Sandbox Promo:</strong> Buyers/Bidders claim <strong>KES 75,000</strong> immediately.
                 </span>
               </div>
             )}

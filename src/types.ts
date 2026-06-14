@@ -41,6 +41,15 @@ export interface Listing {
   bidHistory?: Bid[];
   isAd?: boolean;
   adTagline?: string;
+  brand?: string;
+  specs?: string;
+  size?: string;
+  warranty?: string;
+  minIncrement?: number;
+  autoBidderId?: string | null;
+  autoBidderName?: string | null;
+  autoBidLimit?: number | null;
+  autoBidLocation?: string | null;
 }
 
 export interface Bid {
@@ -62,7 +71,7 @@ export interface UserState {
   phone: string;
   avatar: string;
   balance: number;
-  role: 'buyer' | 'bidder' | 'seller' | 'admin';
+  role: 'buyer' | 'seller' | 'admin';
 }
 
 export interface ValuationReport {

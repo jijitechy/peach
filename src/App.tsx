@@ -197,6 +197,11 @@ export default function App() {
   const [formDurationHours, setFormDurationHours] = useState<string>("24");
   const [formImageUrl, setFormImageUrl] = useState<string>("");
   const [formDescription, setFormDescription] = useState<string>("");
+  const [formBrand, setFormBrand] = useState<string>("");
+  const [formSpecs, setFormSpecs] = useState<string>("");
+  const [formSize, setFormSize] = useState<string>("");
+  const [formWarranty, setFormWarranty] = useState<string>("");
+  const [formMinIncrement, setFormMinIncrement] = useState<string>("500");
 
   // Post form AI Assist triggers
   const [isAiDrafting, setIsAiDrafting] = useState<boolean>(false);
@@ -296,6 +301,11 @@ export default function App() {
         if (priceData) {
           setFormStartingBid(priceData.recommendedStartingBid ? priceData.recommendedStartingBid.toString() : "");
           setFormReservePrice(priceData.recommendedStartingBid ? Math.floor(priceData.recommendedStartingBid * 1.15).toString() : "");
+          setFormBrand(priceData.brand || "");
+          setFormSpecs(priceData.specs || "");
+          setFormSize(priceData.size || "");
+          setFormWarranty(priceData.warranty || "");
+          setFormMinIncrement(priceData.suggestedIncrement ? priceData.suggestedIncrement.toString() : "500");
           setAiValuationText(`Estimated Kenyan New Retail: KES ${priceData.estimatedNewPrice?.toLocaleString()} | Recommended start: KES ${priceData.recommendedStartingBid?.toLocaleString()} | Escrow Fee: KES ${priceData.estimatedEscrowFee}`);
         }
 
@@ -353,7 +363,12 @@ export default function App() {
             startingBid: parseFloat(formStartingBid),
             reservePrice: formReservePrice ? parseFloat(formReservePrice) : undefined,
             durationHours: parseFloat(formDurationHours),
-            imageUrl: formImageUrl || undefined
+            imageUrl: formImageUrl || undefined,
+            brand: formBrand,
+            specs: formSpecs,
+            size: formSize,
+            warranty: formWarranty,
+            minIncrement: parseFloat(formMinIncrement) || 500
           })
         });
         if (response.ok) {
@@ -392,7 +407,12 @@ export default function App() {
           mpesaReceipt: null,
           trackingCode: null,
           imageUrl: formImageUrl || "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=600&q=80",
-          bidHistory: []
+          bidHistory: [],
+          brand: formBrand,
+          specs: formSpecs,
+          size: formSize,
+          warranty: formWarranty,
+          minIncrement: parseFloat(formMinIncrement) || 500
         };
         createLocalListing(newListing);
         publishSuccess = true;
@@ -405,6 +425,11 @@ export default function App() {
         setFormStartingBid("");
         setFormReservePrice("");
         setFormImageUrl("");
+        setFormBrand("");
+        setFormSpecs("");
+        setFormSize("");
+        setFormWarranty("");
+        setFormMinIncrement("500");
         setAiValuationText("");
         
         fetchListings();
@@ -684,6 +709,76 @@ export default function App() {
                   placeholder="Describe your items or services in detail..."
                   className="w-full px-3 py-2 bg-white border border-gray-200 focus:border-brand-primary rounded-xl outline-hidden text-sm font-sans"
                 />
+              </div>
+
+              {/* Premium Catalog Specifications (Dynamic/AI-Supported) */}
+              <div className="bg-orange-50/20 border border-orange-100 rounded-2xl p-4 space-y-4">
+                <div className="flex justify-between items-center select-none">
+                  <div className="flex items-center gap-1.5">
+                    <Tag className="w-4 h-4 text-orange-500" />
+                    <h3 className="font-bold text-xs uppercase text-orange-950 tracking-wider">Premium Catalog Specifications</h3>
+                  </div>
+                  <span className="text-[9px] text-[#f97316] font-bold bg-white px-2 py-0.5 rounded-full border border-orange-100 uppercase">AI Pre-fill active</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div className="space-y-1">
+                    <label className="font-bold uppercase tracking-wider block text-[9px] text-gray-400">Brand Name</label>
+                    <input
+                      type="text"
+                      value={formBrand}
+                      onChange={(e) => setFormBrand(e.target.value)}
+                      placeholder="e.g. Sony, HP, Rolex, Adidas"
+                      className="w-full px-3 py-2 bg-white border border-gray-200 focus:border-orange-500 rounded-xl outline-hidden text-sm"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="font-bold uppercase tracking-wider block text-[9px] text-gray-400">Size / Edition / Physical Units</label>
+                    <input
+                      type="text"
+                      value={formSize}
+                      onChange={(e) => setFormSize(e.target.value)}
+                      placeholder="e.g. Medium, 41mm, 15-inch screen"
+                      className="w-full px-3 py-2 bg-white border border-gray-200 focus:border-orange-500 rounded-xl outline-hidden text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div className="space-y-1">
+                    <label className="font-bold uppercase tracking-wider block text-[9px] text-gray-400">Warranty details</label>
+                    <input
+                      type="text"
+                      value={formWarranty}
+                      onChange={(e) => setFormWarranty(e.target.value)}
+                      placeholder="e.g. 1 Year Official, None"
+                      className="w-full px-3 py-2 bg-white border border-gray-200 focus:border-orange-500 rounded-xl outline-hidden text-sm"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="font-bold uppercase tracking-wider block text-[9px] text-gray-400">Minimum Bid Increment (KES limit)</label>
+                    <input
+                      type="text"
+                      value={formMinIncrement}
+                      onChange={(e) => setFormMinIncrement(e.target.value)}
+                      placeholder="500"
+                      className="w-full px-3 py-2 bg-white border border-gray-200 focus:border-orange-500 rounded-xl outline-hidden text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold uppercase tracking-wider block text-[9px] text-gray-400">Technical Hardware Specifications & Materials Info</label>
+                  <textarea
+                    value={formSpecs}
+                    onChange={(e) => setFormSpecs(e.target.value)}
+                    rows={3}
+                    placeholder="e.g. Intel Core i7 Processor, 16GB Dual DDR4, 512GB SSD PCIe"
+                    className="w-full px-3 py-2 bg-white border border-gray-200 focus:border-orange-500 rounded-xl outline-hidden text-sm font-sans"
+                  />
+                </div>
               </div>
 
               <button
