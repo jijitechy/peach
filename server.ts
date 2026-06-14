@@ -836,25 +836,42 @@ app.post("/api/gemini/generate-description", async (req, res) => {
     });
   }
 
-  const { title, category, condition, location } = req.body;
+  const { title, category, condition, location, image } = req.body;
   const prompt = `You are a professional conversion-rate copywriter for "Peach", a venture-backed auction and instant-checkout marketplace for both new and premium pre-owned items in Kenya.
-Write a hyper-compelling, professional, and visually formatted product description for a listing with these details:
+Write a hyper-compelling, professional, and visually formatted search-engine optimized (SEO) product description for a listing with these details:
 - Title: ${title}
 - Category: ${category}
 - Condition: ${condition}
 - Location: ${location}
 
 The description must satisfy these guidelines:
-1. Include a short, bold introductory paragraph highlighting the premium value of this item (whether brand new or excellently pre-owned).
+1. Include a short, bold introductory paragraph highlighting the premium value of this item (whether brand new or wonderfully pre-owned).
 2. Outline key selling points or specs in bullet points.
 3. Call out why bidding on this item is safe due to Peach's secure Escrow vault protection and instant Safaricom M-Pesa convenience.
-4. Keep the tone friendly, modern, and trustworthy. Use localized Kenyan vibes appropriately (e.g., mention Nairobi, Nyali, etc. if relevant, the general region).
+4. Keep the tone friendly, modern, and trustworthy. Use localized Kenyan vibes appropriately (e.g., Nyali, Kilimani, Westlands).
 Write exactly 3 focused sections. Keep it under 250 words total. Do not use markdown tags outside standard bold and bullet points.`;
 
   try {
+    let contents: any = prompt;
+    if (image && image.data && image.mimeType) {
+      contents = {
+        parts: [
+          {
+            inlineData: {
+              mimeType: image.mimeType,
+              data: image.data
+            }
+          },
+          {
+            text: prompt + "\n\nAnalyze the attached image/video of the actual product to draft an even more detailed, highly accurate description of its physical appearance, colors, branding elements, and visual state."
+          }
+        ]
+      };
+    }
+
     const response = await ai.models.generateContent({
       model: "gemini-3.5-flash",
-      contents: prompt,
+      contents: contents,
     });
     const parsedText = response.text || "No response text generated";
     res.json({ description: parsedText });

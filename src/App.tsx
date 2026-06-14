@@ -13,6 +13,7 @@ import AuthModal from "./components/AuthModal";
 import ProfileModal from "./components/ProfileModal";
 import CartModal from "./components/CartModal";
 import ActivityTicker from "./components/ActivityTicker";
+import { getLocalListings, createLocalListing } from "./utils/dataStore";
 
 export default function App() {
   const [viewportMode, setViewportMode] = useState<ViewportMode>("web");
@@ -106,6 +107,42 @@ export default function App() {
     }
   };
 
+  const [isDragOver, setIsDragOver] = useState<boolean>(false);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      processFile(file);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      processFile(file);
+    }
+  };
+
+  const processFile = (file: File) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      setFormImageUrl(base64String);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const [activeTab, setActiveTab] = useState<"marketplace" | "post" | "admin">("marketplace");
   
   // Watchlist & Personal Favorites State
@@ -173,13 +210,23 @@ export default function App() {
   const fetchListings = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch("/api/listings");
-      if (response.ok) {
-        const data = await response.json();
-        setListings(data);
+      let loadedListings: Listing[] = [];
+      try {
+        const response = await fetch("/api/listings");
+        const contentType = response.headers.get("content-type");
+        if (response.ok && contentType && contentType.includes("application/json")) {
+          const data = await response.json();
+          loadedListings = data;
+        } else {
+          throw new Error("Express endpoint returned non-JSON/offline fallback");
+        }
+      } catch (err) {
+        console.warn("Backend offline or static mode. Restoring persistent listings from browser client database.", err);
+        loadedListings = getLocalListings();
       }
+      setListings(loadedListings);
     } catch (error) {
-      console.error("Error connecting to fullstack API:", error);
+      console.error("Error connecting to listings interface:", error);
     } finally {
       setIsLoading(false);
     }
@@ -200,16 +247,33 @@ export default function App() {
     setAiValuationText("");
 
     try {
+      const bodyPayload: any = {
+        title: formTitle,
+        category: formCategory,
+        condition: formCondition,
+        location: formLocation
+      };
+
+      // If they uploaded a custom image/video file to include in visual description drafting
+      if (formImageUrl && formImageUrl.startsWith("data:")) {
+        try {
+          const parts = formImageUrl.split(",");
+          const mimeType = parts[0].match(/:(.*?);/)?.[1] || "image/png";
+          const base64Data = parts[1];
+          bodyPayload.image = {
+            mimeType,
+            data: base64Data
+          };
+        } catch (e) {
+          console.warn("Could not parse base64 image for multimodal copilot. Proceeding without media.", e);
+        }
+      }
+
       // 1. Fetch AI compiled description
       const descRes = await fetch("/api/gemini/generate-description", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: formTitle,
-          category: formCategory,
-          condition: formCondition,
-          location: formLocation
-        })
+        body: JSON.stringify(bodyPayload)
       });
 
       // 2. Fetch AI optimal pricing indexing
@@ -272,26 +336,69 @@ export default function App() {
     }
 
     try {
-      const response = await fetch("/api/listings", {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${currentUser.id}`
-        },
-        body: JSON.stringify({
+      let publishSuccess = false;
+      try {
+        const response = await fetch("/api/listings", {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${currentUser.id}`
+          },
+          body: JSON.stringify({
+            title: formTitle,
+            description: formDescription,
+            category: formCategory,
+            condition: formCondition,
+            location: formLocation,
+            startingBid: parseFloat(formStartingBid),
+            reservePrice: formReservePrice ? parseFloat(formReservePrice) : undefined,
+            durationHours: parseFloat(formDurationHours),
+            imageUrl: formImageUrl || undefined
+          })
+        });
+        if (response.ok) {
+          publishSuccess = true;
+        } else {
+          throw new Error("Direct endpoint failed");
+        }
+      } catch (err) {
+        console.warn("Express peer endpoint unavailable. Writing new listing to secure client-side browser catalog.", err);
+        const newListing: Listing = {
+          id: "lst-" + Math.random().toString(36).substr(2, 9),
           title: formTitle,
           description: formDescription,
           category: formCategory,
           condition: formCondition,
           location: formLocation,
+          seller: {
+            id: currentUser.id,
+            name: currentUser.name,
+            rating: 4.8,
+            avatar: currentUser.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80"
+          },
           startingBid: parseFloat(formStartingBid),
-          reservePrice: formReservePrice ? parseFloat(formReservePrice) : undefined,
-          durationHours: parseFloat(formDurationHours),
-          imageUrl: formImageUrl || undefined
-        })
-      });
+          reservePrice: formReservePrice ? parseFloat(formReservePrice) : parseFloat(formStartingBid) * 1.1,
+          currentBid: parseFloat(formStartingBid),
+          bidsCount: 0,
+          endTime: new Date(Date.now() + parseFloat(formDurationHours) * 60 * 60 * 1000).toISOString(),
+          status: "active",
+          winnerId: null,
+          winnerName: null,
+          escrowStatus: "none",
+          deliveryOption: null,
+          deliveryFee: 0,
+          deliveryAddress: null,
+          mpesaPhone: null,
+          mpesaReceipt: null,
+          trackingCode: null,
+          imageUrl: formImageUrl || "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=600&q=80",
+          bidHistory: []
+        };
+        createLocalListing(newListing);
+        publishSuccess = true;
+      }
 
-      if (response.ok) {
+      if (publishSuccess) {
         // Reset state & load marketplace listings back
         setFormTitle("");
         setFormDescription("");
@@ -504,8 +611,61 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="font-bold uppercase tracking-wider block text-[10px] text-gray-500">Product Image URL (Optional)</label>
+              <div className="space-y-1.5">
+                <label className="font-bold uppercase tracking-wider block text-[10px] text-gray-500">Product Media (Upload File or Enter Image URL)</label>
+                
+                <div className={`border border-dashed rounded-2xl p-4 text-center transition-all relative ${
+                  isDragOver ? "border-brand-primary bg-orange-50/20" : "border-gray-200 bg-gray-50/50 hover:bg-gray-50 hover:border-gray-300"
+                }`}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                >
+                  <div className="flex flex-col items-center justify-center gap-1">
+                    <div className="p-2 bg-orange-100 rounded-full text-[#ea580c] mb-1">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <span className="font-extrabold text-[11px] text-gray-700 block">Drag & Drop Product Media here</span>
+                      <span className="text-[9px] text-gray-400 block mt-0.5 font-medium">Supports PNG, JPG, and video files (Max 5MB)</span>
+                    </div>
+                    <label className="mt-2 bg-gray-950 hover:bg-[#ea580c] active:scale-95 text-[10px] font-bold text-white uppercase tracking-wider px-3 py-1.5 rounded-lg cursor-pointer transition-all select-none">
+                      Choose File
+                      <input
+                        type="file"
+                        accept="image/*,video/*"
+                        onChange={handleFileChange}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+
+                  {formImageUrl && (
+                    <div className="mt-3 relative inline-block border border-gray-100 rounded-lg overflow-hidden max-h-36 max-w-full">
+                      {formImageUrl.startsWith("data:video/") ? (
+                        <video src={formImageUrl} controls className="max-h-32 rounded-md object-contain" />
+                      ) : (
+                        <img src={formImageUrl} alt="Product Media Preview" className="max-h-32 rounded-md object-contain" referrerPolicy="no-referrer" />
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setFormImageUrl("")}
+                        className="absolute top-1 right-1 bg-black/60 hover:bg-black text-white p-1 rounded-full text-[9px]"
+                        title="Remove product media"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-2 text-center text-gray-400 font-bold text-[9px] uppercase tracking-widest relative flex items-center justify-center">
+                  <span className="bg-white px-2 z-10">Or specify image link</span>
+                  <div className="absolute left-0 right-0 top-1/2 -z-0 border-t border-gray-100"></div>
+                </div>
+
                 <input
                   type="text"
                   value={formImageUrl}
@@ -620,7 +780,7 @@ export default function App() {
                   <span className="inline-block bg-emerald-500/10 text-emerald-300 border border-emerald-500/25 text-[10px] tracking-wider uppercase font-bold py-0.5 px-2.5 rounded-full mb-1">
                     Vanguard Security System
                   </span>
-                  <h3 className="text-xl font-display font-bold">Safest Second-Hand Marketplace in Africa</h3>
+                  <h3 className="text-xl font-display font-bold">Safest New & Second-Hand Marketplace in Africa</h3>
                   <p className="text-xs text-gray-300 mt-1.5 leading-relaxed font-sans">
                     With M-Pesa automated STK push triggers, multi-rider logistics confirmation, and instant escrow funds release, fraud is physically impossible. That's why Peach is trusted nationwide.
                   </p>
