@@ -1,7 +1,7 @@
 import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
 import { initializeApp as initializeFirebaseApp } from "firebase/app";
 import { getFirestore, collection, doc, getDocs, getDoc, setDoc, deleteDoc } from "firebase/firestore";
@@ -1167,6 +1167,103 @@ Return ONLY this parseable JSON block, with no additional markdown block wrapper
       warranty: "None (Sold as seen)",
       suggestedIncrement: 500
     });
+  }
+});
+
+
+// Gemini Endpoint: Combined Multi-Modal AI Details Autofill
+app.post("/api/gemini/autofill-listing-details", async (req, res) => {
+  if (!isGeminiAvailable || !ai) {
+    // Dynamic mock fallback based on input
+    const title = req.body.title || "Premium Pre-Owned Product";
+    const category = req.body.category || "Electronics";
+    const condition = req.body.condition || "Good";
+    const location = req.body.location || "Nairobi";
+    
+    return res.json({
+      title: title,
+      category: category,
+      condition: condition,
+      description: `Premium, verified locally listed ${title} located near ${location}. Meticulously scrutinized by Peach escrow safety team. Instant purchase or bidding in Kenyan Shillings (KES).`,
+      brand: "Generic/Premium",
+      specs: "Superb condition, certified by local expert team.",
+      size: "Standard Size",
+      warranty: "3 Months Warranty",
+      recommendedStartingBid: 12000,
+      recommendedReservePrice: 13800,
+      suggestedIncrement: 500
+    });
+  }
+
+  const { title, category, condition, location, image } = req.body;
+  const prompt = `You are an expert AI marketplace listing officer for "Peach", a secure auction platform in Kenya.
+Analyze the provided parameters (Title: "${title || "Not specified"}", Category: "${category || "Not specified"}", Condition: "${condition || "Not specified"}", Location: "${location || "Nairobi"}") and any attached visual image.
+
+If an image is attached, inspect the image to:
+1. Identify the product: brand, model, visual state, color. If title is empty, generate an appropriate title.
+2. Deduce the most appropriate category (Must be strictly one of: 'Electronics', 'Fashion', 'Books & Hobbies', 'Services', 'Vehicles & Sports').
+3. Draft a beautiful, professional market-grade description. Encourage trust by calling out security via Peach Escrow.
+4. Estimate logical starting auction value in KES (Kenyan Shillings) appropriate for pre-owned or new items in the local Nairobi market. Recommend reserve, minimum bid increment (usually 500 or 1000), brand, specs, standard size/dimensions, and estimated warranty.
+
+If NO image is attached, use the specified Title/details to generate the complete dataset, filling in all missing fields smartly with realistic marketplace defaults.
+
+Refining guidelines:
+- Title must be crisp, descriptive but brief (e.g. "Apple iPhone 12 Pro Max (128GB, Pacific Blue)")
+- Description must highlight escrow protection, M-Pesa convenience and include localized Kenyan details.
+- Recommended starting bid must be a realistic number in KES (e.g. 50000).
+- Recommended reserve price should be around 1.15x starting bid, rounded.
+- Category must be one of: "Electronics", "Fashion", "Books & Hobbies", "Services", "Vehicles & Sports"
+- Condition must be one of: "New", "Like New", "Good", "Fair".`;
+
+  try {
+    let contents: any = prompt;
+    if (image && image.data && image.mimeType) {
+      contents = {
+        parts: [
+          {
+            inlineData: {
+              mimeType: image.mimeType,
+              data: image.data
+            }
+          },
+          {
+            text: prompt + "\n\nAnalyze the attached visual image to compile the accurate detail fields."
+          }
+        ]
+      };
+    }
+
+    const response = await ai.models.generateContent({
+      model: "gemini-3.5-flash",
+      contents: contents,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            title: { type: Type.STRING },
+            category: { type: Type.STRING, description: "Must be one of: Electronics, Fashion, Books & Hobbies, Services, Vehicles & Sports" },
+            condition: { type: Type.STRING, description: "Must be one of: New, Like New, Good, Fair" },
+            description: { type: Type.STRING },
+            brand: { type: Type.STRING },
+            specs: { type: Type.STRING },
+            size: { type: Type.STRING },
+            warranty: { type: Type.STRING },
+            recommendedStartingBid: { type: Type.NUMBER },
+            recommendedReservePrice: { type: Type.NUMBER },
+            suggestedIncrement: { type: Type.NUMBER }
+          },
+          required: ["title", "category", "condition", "description", "brand", "specs", "size", "warranty", "recommendedStartingBid", "recommendedReservePrice", "suggestedIncrement"]
+        }
+      }
+    });
+
+    const textResult = response.text?.trim() || "{}";
+    const data = JSON.parse(textResult);
+    res.json(data);
+  } catch (error: any) {
+    console.error("Gemini autofill listing details error:", error);
+    res.status(500).json({ error: error.message || "Failed to process AI autofill details" });
   }
 });
 

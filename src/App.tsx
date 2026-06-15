@@ -249,8 +249,8 @@ export default function App() {
 
   // Handle auto pre-generation of descriptions + optimal bid pricing guidance with Gemini
   const handleAiCopilotDraft = async () => {
-    if (!formTitle.trim()) {
-      alert("Please provide at least a title for the item first (e.g. 'Refurbished laptop') so our AI officer can analyze it.");
+    if (!formTitle.trim() && !formImageUrl) {
+      alert("Please provide at least a title for the item OR upload/specify a product picture first so our AI Co-pilot can analyze and autofill all details at once.");
       return;
     }
 
@@ -265,7 +265,7 @@ export default function App() {
         location: formLocation
       };
 
-      // If they uploaded a custom image/video file to include in visual description drafting
+      // If they uploaded or specified a base64 image
       if (formImageUrl && formImageUrl.startsWith("data:")) {
         try {
           const parts = formImageUrl.split(",");
@@ -280,48 +280,37 @@ export default function App() {
         }
       }
 
-      // 1. Fetch AI compiled description
-      const descRes = await fetch("/api/gemini/generate-description", {
+      const res = await fetch("/api/gemini/autofill-listing-details", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(bodyPayload)
       });
 
-      // 2. Fetch AI optimal pricing indexing
-      const priceRes = await fetch("/api/gemini/evaluate-item", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: formTitle,
-          category: formCategory,
-          condition: formCondition
-        })
-      });
+      if (res.ok) {
+        const data = await res.json();
 
-      if (descRes.ok && priceRes.ok) {
-        const descData = await descRes.json();
-        const priceData = await priceRes.json();
+        if (data.title) setFormTitle(data.title);
+        if (data.category) setFormCategory(data.category);
+        if (data.condition) setFormCondition(data.condition);
+        if (data.description) setFormDescription(data.description);
+        if (data.brand) setFormBrand(data.brand);
+        if (data.specs) setFormSpecs(data.specs);
+        if (data.size) setFormSize(data.size);
+        if (data.warranty) setFormWarranty(data.warranty);
+        if (data.recommendedStartingBid) setFormStartingBid(data.recommendedStartingBid.toString());
+        if (data.recommendedReservePrice) setFormReservePrice(data.recommendedReservePrice.toString());
+        if (data.suggestedIncrement) setFormMinIncrement(data.suggestedIncrement.toString());
 
-        setFormDescription(descData.description || "");
-        
-        if (priceData) {
-          setFormStartingBid(priceData.recommendedStartingBid ? priceData.recommendedStartingBid.toString() : "");
-          setFormReservePrice(priceData.recommendedStartingBid ? Math.floor(priceData.recommendedStartingBid * 1.15).toString() : "");
-          setFormBrand(priceData.brand || "");
-          setFormSpecs(priceData.specs || "");
-          setFormSize(priceData.size || "");
-          setFormWarranty(priceData.warranty || "");
-          setFormMinIncrement(priceData.suggestedIncrement ? priceData.suggestedIncrement.toString() : "500");
-          setAiValuationText(`Estimated Kenyan New Retail: KES ${priceData.estimatedNewPrice?.toLocaleString()} | Recommended start: KES ${priceData.recommendedStartingBid?.toLocaleString()} | Escrow Fee: KES ${priceData.estimatedEscrowFee}`);
-        }
+        setAiValuationText(`AI Listing Autofill complete! Suggested Starting bid: KES ${data.recommendedStartingBid?.toLocaleString()} | Suggested Reserve: KES ${data.recommendedReservePrice?.toLocaleString()}`);
 
         // Set matching product template image if empty
         if (!formImageUrl) {
-          if (formCategory === "Electronics") {
+          const targetCategory = data.category || formCategory;
+          if (targetCategory === "Electronics") {
             setFormImageUrl("https://images.unsplash.com/photo-1546868871-7041f2a55e12?auto=format&fit=crop&w=600&q=80"); // apple watch mock
-          } else if (formCategory === "Fashion") {
+          } else if (targetCategory === "Fashion") {
             setFormImageUrl("https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&w=600&q=80"); // shirt mock
-          } else if (formCategory === "Vehicles & Sports") {
+          } else if (targetCategory === "Vehicles & Sports") {
             setFormImageUrl("https://images.unsplash.com/photo-1485965120184-e220f721d03e?auto=format&fit=crop&w=600&q=80"); // bike mock
           } else {
             setFormImageUrl("https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=600&q=80"); // generic camera
@@ -329,10 +318,13 @@ export default function App() {
         }
 
         setShowAiSuccessToast(true);
-        setTimeout(() => setShowAiSuccessToast(false), 4500);
+        setTimeout(() => setShowAiSuccessToast(false), 6000);
+      } else {
+        alert("Autofill endpoint returned a generation error.");
       }
     } catch (e) {
       console.error(e);
+      alert("Failed to communicate with the premium AI Copilot server endpoint.");
     } finally {
       setIsAiDrafting(false);
     }
