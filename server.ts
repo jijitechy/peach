@@ -13,6 +13,25 @@ dotenv.config();
 const firebaseApp = initializeFirebaseApp(firebaseConfig);
 const db = getFirestore(firebaseApp, firebaseConfig.firestoreDatabaseId);
 
+// Helper to protect against Firestore SDK hanging when offline or unprovisioned
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number = 1500): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error("Firestore connection timed out (offline/unprovisioned fallback)"));
+    }, timeoutMs);
+    promise.then(
+      (res) => {
+        clearTimeout(timer);
+        resolve(res);
+      },
+      (err) => {
+        clearTimeout(timer);
+        reject(err);
+      }
+    );
+  });
+}
+
 // Initialize Gemini API client if key exists
 const isGeminiAvailable = !!process.env.GEMINI_API_KEY;
 let ai: GoogleGenAI | null = null;
@@ -281,11 +300,11 @@ const SEED_ACTIVITIES = [
 // Asymmetric Firestore CRUD helpers
 async function fetchListings(): Promise<any[]> {
   try {
-    const querySnapshot = await getDocs(collection(db, "listings"));
+    const querySnapshot = await withTimeout(getDocs(collection(db, "listings")));
     if (querySnapshot.empty) {
       console.log("Firestore listings empty, seeding initial marketplace documents...");
       for (const item of SEED_LISTINGS) {
-        await setDoc(doc(db, "listings", item.id), item);
+        await withTimeout(setDoc(doc(db, "listings", item.id), item));
       }
       return SEED_LISTINGS;
     }
@@ -302,7 +321,7 @@ async function fetchListings(): Promise<any[]> {
 
 async function saveListing(listing: any): Promise<void> {
   try {
-    await setDoc(doc(db, "listings", listing.id), listing);
+    await withTimeout(setDoc(doc(db, "listings", listing.id), listing));
   } catch (err) {
     console.error("Failed to save listing to Firestore:", err);
   }
@@ -310,11 +329,11 @@ async function saveListing(listing: any): Promise<void> {
 
 async function fetchUsers(): Promise<any[]> {
   try {
-    const querySnapshot = await getDocs(collection(db, "users"));
+    const querySnapshot = await withTimeout(getDocs(collection(db, "users")));
     if (querySnapshot.empty) {
       console.log("Firestore users empty, seeding default user profiles...");
       for (const u of SEED_USERS) {
-        await setDoc(doc(db, "users", u.id), u);
+        await withTimeout(setDoc(doc(db, "users", u.id), u));
       }
       return SEED_USERS;
     }
@@ -331,7 +350,7 @@ async function fetchUsers(): Promise<any[]> {
 
 async function saveUser(user: any): Promise<void> {
   try {
-    await setDoc(doc(db, "users", user.id), user);
+    await withTimeout(setDoc(doc(db, "users", user.id), user));
   } catch (err) {
     console.error("Failed to save user to Firestore:", err);
   }
@@ -339,7 +358,7 @@ async function saveUser(user: any): Promise<void> {
 
 async function deleteUser(id: string): Promise<void> {
   try {
-    await deleteDoc(doc(db, "users", id));
+    await withTimeout(deleteDoc(doc(db, "users", id)));
   } catch (err) {
     console.error("Failed to delete user from Firestore:", err);
   }
@@ -347,11 +366,11 @@ async function deleteUser(id: string): Promise<void> {
 
 async function fetchBids(): Promise<any[]> {
   try {
-    const querySnapshot = await getDocs(collection(db, "bids"));
+    const querySnapshot = await withTimeout(getDocs(collection(db, "bids")));
     if (querySnapshot.empty) {
       console.log("Firestore bids empty, seeding historical bids...");
       for (const b of SEED_BIDS) {
-        await setDoc(doc(db, "bids", b.id), b);
+        await withTimeout(setDoc(doc(db, "bids", b.id), b));
       }
       return SEED_BIDS;
     }
@@ -368,7 +387,7 @@ async function fetchBids(): Promise<any[]> {
 
 async function saveBid(bid: any): Promise<void> {
   try {
-    await setDoc(doc(db, "bids", bid.id), bid);
+    await withTimeout(setDoc(doc(db, "bids", bid.id), bid));
   } catch (err) {
     console.error("Failed to save bid to Firestore:", err);
   }
@@ -376,11 +395,11 @@ async function saveBid(bid: any): Promise<void> {
 
 async function fetchActivities(): Promise<any[]> {
   try {
-    const querySnapshot = await getDocs(collection(db, "activities"));
+    const querySnapshot = await withTimeout(getDocs(collection(db, "activities")));
     if (querySnapshot.empty) {
       console.log("Firestore activities empty, seeding initial logs...");
       for (const act of SEED_ACTIVITIES) {
-        await setDoc(doc(db, "activities", act.id), act);
+        await withTimeout(setDoc(doc(db, "activities", act.id), act));
       }
       return SEED_ACTIVITIES;
     }
@@ -403,7 +422,7 @@ async function addActivity(type: 'bid_placed' | 'bid_won' | 'listing_created' | 
       message,
       timestamp: new Date().toISOString()
     };
-    await setDoc(doc(db, "activities", newAct.id), newAct);
+    await withTimeout(setDoc(doc(db, "activities", newAct.id), newAct));
   } catch (err) {
     console.error("Failed to write live activity to Firestore:", err);
   }
