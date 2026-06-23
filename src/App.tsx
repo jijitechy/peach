@@ -249,6 +249,13 @@ export default function App() {
 
   useEffect(() => {
     fetchListings();
+
+    // Parse deep links for active sharing referrals
+    const searchParams = new URLSearchParams(window.location.search);
+    const linkedListingId = searchParams.get("listingId") || searchParams.get("listing");
+    if (linkedListingId) {
+      setSelectedListingId(linkedListingId);
+    }
   }, []);
 
   // Handle auto pre-generation of descriptions + optimal bid pricing guidance with Gemini

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { 
   ArrowLeft, Clock, ShieldCheck, MapPin, Sparkles, Send, 
   History, Users, Truck, MessageSquare, Star, Landmark, 
-  AlertTriangle, Check, Info, ChevronRight, Play, CheckCircle, Loader2, Award, Heart
+  AlertTriangle, Check, Info, ChevronRight, Play, CheckCircle, Loader2, Award, Heart, Copy, Share2
 } from "lucide-react";
 import { Listing, Bid, ValuationReport, UserState } from "../types";
 import SimulatedMpesaSTK from "./SimulatedMpesaSTK";
@@ -53,6 +53,15 @@ export default function ListingDetail({
   const [deliveryOption, setDeliveryOption] = useState<string>("Peach Smart Express");
   const [deliveryAddress, setDeliveryAddress] = useState<string>("");
   const [deliveryFee, setDeliveryFee] = useState<number>(350);
+
+  // Social Sharing & AI Captions Integration State
+  const [selectedNetwork, setSelectedNetwork] = useState<"facebook" | "tiktok">("facebook");
+  const [shareCaption, setShareCaption] = useState<string>("");
+  const [isCaptionLoading, setIsCaptionLoading] = useState<boolean>(false);
+  const [copiedLink, setCopiedLink] = useState<boolean>(false);
+  const [copiedCaption, setCopiedCaption] = useState<boolean>(false);
+  const [isSharingSimulator, setIsSharingSimulator] = useState<boolean>(false);
+  const [simulatedPosted, setSimulatedPosted] = useState<boolean>(false);
 
   // Refresh Single Listing Detail
   const fetchListingDetail = async () => {
@@ -377,6 +386,90 @@ export default function ListingDetail({
       }
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  // Build the live deep link url based on current location and ID
+  const deepLinkUrl = `${window.location.origin}/?listingId=${listingId}`;
+
+  const generateSocialCaption = async () => {
+    if (!listing) return;
+    try {
+      setIsCaptionLoading(true);
+      setSimulatedPosted(false);
+      setCopiedCaption(false);
+      const res = await fetch("/api/gemini/generate-social-caption", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: listing.title,
+          category: listing.category,
+          condition: listing.condition,
+          location: listing.location,
+          price: listing.currentBid || listing.startingBid || 1000,
+          allowBidding: listing.allowBidding,
+          deepLink: deepLinkUrl,
+          network: selectedNetwork
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setShareCaption(data.caption);
+      } else {
+        throw new Error("Caption generation API failed");
+      }
+    } catch (error) {
+      console.error("AI Caption generation error, invoking dynamic fallback:", error);
+      // Client-side dynamic robust fallback
+      let fallbackText = "";
+      if (selectedNetwork === "facebook") {
+        fallbackText = `🔥 AMAZING VALUE ALERT on Peach Kenya! 🔥\n\nLooking for a premium ${listing.title}? We've got you covered! Located in ${listing.location || "Nairobi"}, this item is in ${listing.condition || "Excellent"} condition and is available right now.\n\n💰 Price: KES ${(listing.currentBid || listing.startingBid || 1000).toLocaleString()} (${listing.allowBidding !== false ? "Bidding open!" : "Direct Buy Now"})\n🔒 Safe & Guarded P2P Escrow - Your money stays locked until you inspect and approve delivery!\n\n👇 Bid / Buy directly here:\n🔗 ${deepLinkUrl}\n\n#PeachMarketplace #KenyaDeals #SecureEscrow #NairobiShopping`;
+      } else {
+        fallbackText = `[Video cue: Show high-energy close up of the ${listing.title} with some cool music 🎵]\n\n"Weh! Cheki hii crazy deal kwenye Peach! 🤩 This absolute gem is in ${listing.condition || "Superb"} condition! Inapatikana hapa hapa ${listing.location || "Nairobi"}. Form ni gani? Bidding starts at just KES ${(listing.currentBid || listing.startingBid || 1000).toLocaleString()}! 🚀"\n\n[Video cue: Tap on the phone to show fast Safaricom M-Pesa secure escrow transaction]\n\nCaption:\nLooking for high aura deals? 🤫 Skip the drama and trade with 100% Peach Escrow protection! Fast shipping countrywide. Link in bio! 📲\n🔗 ${deepLinkUrl}\n\n#TikTokKenya #PeachEscrow #Chonjo #Aura #SafeShopping #KenyaFinest`;
+      }
+      setShareCaption(fallbackText);
+    } finally {
+      setIsCaptionLoading(false);
+    }
+  };
+
+  // Regenerate caption when active network tab shifts
+  useEffect(() => {
+    if (shareCaption) {
+      generateSocialCaption();
+    }
+  }, [selectedNetwork]);
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(deepLinkUrl);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
+  };
+
+  const handleCopyCaption = () => {
+    navigator.clipboard.writeText(shareCaption);
+    setCopiedCaption(true);
+    setTimeout(() => setCopiedCaption(false), 2000);
+  };
+
+  const handleSimulateSyndication = async () => {
+    try {
+      setIsSharingSimulator(true);
+      
+      // Post an activity update to our server ticker if available
+      const message = `📢 ${currentUser ? currentUser.name : "A user"} socialized item "${listing?.title}" onto ${selectedNetwork === "facebook" ? "Facebook" : "TikTok"}!`;
+      await fetch("/api/activities/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message })
+      }).catch(err => console.warn("Activity server route offline", err));
+
+      setTimeout(() => {
+        setIsSharingSimulator(false);
+        setSimulatedPosted(true);
+      }, 1200);
+    } catch (e) {
+      setIsSharingSimulator(false);
     }
   };
 
@@ -1135,6 +1228,163 @@ export default function ListingDetail({
                     </div>
                   );
                 })}
+              </div>
+            )}
+          </div>
+
+          {/* AI Social Media Sharing Integration */}
+          <div className="bg-linear-to-br from-indigo-50 to-pink-50 p-5 rounded-2xl border border-indigo-100 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-indigo-600 animate-bounce" />
+                <h3 className="font-display font-extrabold text-xs text-gray-900 uppercase tracking-wider">AI Social Syndication</h3>
+              </div>
+              <span className="bg-indigo-100/80 text-indigo-700 text-[9px] font-mono px-2 py-0.5 rounded-full font-bold uppercase border border-indigo-150">
+                Promo Tool
+              </span>
+            </div>
+
+            <p className="text-[11px] text-gray-650 leading-relaxed font-sans">
+              Instantly draft viral, high-conversion promotional captions including dynamic deep links to your live Peach listing. Dominate Facebook and TikTok feeds!
+            </p>
+
+            {/* Network Switching Tabs */}
+            <div className="flex bg-gray-100 p-1 rounded-xl border border-gray-150">
+              <button
+                type="button"
+                onClick={() => setSelectedNetwork("facebook")}
+                className={`flex-1 py-1.5 text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 transition-all outline-hidden cursor-pointer ${
+                  selectedNetwork === "facebook"
+                    ? "bg-white text-blue-600 shadow-xs border border-gray-200"
+                    : "text-gray-500 hover:text-gray-800"
+                }`}
+              >
+                Facebook Post
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedNetwork("tiktok")}
+                className={`flex-1 py-1.5 text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 transition-all outline-hidden cursor-pointer ${
+                  selectedNetwork === "tiktok"
+                    ? "bg-white text-pink-600 shadow-xs border border-gray-200"
+                    : "text-gray-500 hover:text-gray-800"
+                }`}
+              >
+                TikTok Video Caption
+              </button>
+            </div>
+
+            {/* Live Deep Link Address */}
+            <div className="bg-white/80 p-2.5 rounded-xl border border-indigo-50/50 flex items-center justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <span className="text-[9px] text-gray-400 block uppercase font-mono tracking-wider">Generated Deep Link</span>
+                <span className="text-[10px] text-indigo-800 truncate block font-mono font-bold">
+                  {deepLinkUrl}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={handleCopyLink}
+                className="p-1.5 bg-gray-50 hover:bg-indigo-50 text-gray-500 hover:text-indigo-600 rounded-lg border border-gray-200 transition-colors shrink-0 cursor-pointer"
+                title="Copy Listing Deep Link"
+              >
+                {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+              </button>
+            </div>
+
+            {shareCaption ? (
+              <div className="space-y-3 animate-fadeIn">
+                {/* Visual Preview Frame of Social Post */}
+                <div className={`p-4 rounded-xl border text-[11px] shadow-2xs relative overflow-hidden transition-all duration-300 ${
+                  selectedNetwork === "facebook"
+                    ? "bg-white border-blue-150 text-gray-700"
+                    : "bg-gray-950 border-gray-800 text-gray-100 font-mono"
+                }`}>
+                  {/* Decorative badge header */}
+                  <div className="flex items-center gap-2.5 mb-3 select-none">
+                    <div className={`w-6.5 h-6.5 rounded-full flex items-center justify-center text-[10px] font-black ${
+                      selectedNetwork === "facebook" ? "bg-blue-600 text-white" : "bg-linear-to-r from-teal-400 to-pink-500 text-white"
+                    }`}>
+                      {selectedNetwork === "facebook" ? "f" : "T"}
+                    </div>
+                    <div>
+                      <span className={`font-bold block text-[11px] ${selectedNetwork === "facebook" ? "text-gray-800" : "text-white"}`}>
+                        {selectedNetwork === "facebook" ? "Facebook Post Mockup" : "TikTok Audio Overlay & Script"}
+                      </span>
+                      <span className="text-[9px] text-gray-400 block">AI Engine Draft • Peach Syndication</span>
+                    </div>
+                  </div>
+
+                  <p className="whitespace-pre-wrap leading-relaxed select-all max-h-[170px] overflow-y-auto pr-1 text-gray-755 font-medium">
+                    {shareCaption}
+                  </p>
+                </div>
+
+                {/* Simulated Campaign action buttons */}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handleCopyCaption}
+                    className="flex-1 py-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold rounded-xl shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    {copiedCaption ? (
+                      <>
+                        <Check className="w-3.5 h-3.5" /> Copied Caption!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5" /> Copy Campaign
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleSimulateSyndication}
+                    disabled={isSharingSimulator}
+                    className="py-2 px-3.5 bg-gray-900 hover:bg-brand-primary text-white text-[11px] font-bold rounded-xl shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:bg-gray-300"
+                  >
+                    {isSharingSimulator ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <>
+                        <Share2 className="w-3.5 h-3.5" /> Launch Feed Post
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={generateSocialCaption}
+                disabled={isCaptionLoading}
+                className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:bg-gray-350"
+              >
+                {isCaptionLoading ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Generating AI Captions...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-3.5 h-3.5" />
+                    Generate AI Sharing Caption
+                  </>
+                )}
+              </button>
+            )}
+
+            {/* Campaign Success Indicator feedback */}
+            {simulatedPosted && (
+              <div className="bg-emerald-50 border border-emerald-250 text-emerald-800 p-3 rounded-xl text-xs space-y-1 animate-fadeIn">
+                <div className="flex items-center gap-1.5 font-bold">
+                  <Check className="w-4 h-4 text-emerald-600 animate-pulse" />
+                  <span>Submitting social campaign!</span>
+                </div>
+                <p className="text-[10px] text-emerald-700 leading-normal">
+                  Your styled copy is simulated as posted to your active social audience. The system logged this event in the Live Activity Ticker! Check it on top.
+                </p>
               </div>
             )}
           </div>
