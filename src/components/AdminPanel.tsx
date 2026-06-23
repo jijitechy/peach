@@ -44,7 +44,16 @@ export default function AdminPanel({ currentUser, onRefreshListings }: AdminPane
   const [adDescription, setAdDescription] = useState<string>('');
   const [adCategory, setAdCategory] = useState<string>('Services');
   const [adImageUrl, setAdImageUrl] = useState<string>('');
+  const [adVideoUrl, setAdVideoUrl] = useState<string>('');
   const [adTagline, setAdTagline] = useState<string>('Sponsored Feature Deal');
+
+  // Ad social network syndication variables
+  const [adsList, setAdsList] = useState<Listing[]>([]);
+  const [selectedAdForSync, setSelectedAdForSync] = useState<Listing | null>(null);
+  const [syncMeta, setSyncMeta] = useState<boolean>(true);
+  const [syncTikTok, setSyncTikTok] = useState<boolean>(true);
+  const [syncBudget, setSyncBudget] = useState<string>('5000');
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
 
   // Edited user states
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
@@ -91,8 +100,56 @@ export default function AdminPanel({ currentUser, onRefreshListings }: AdminPane
     }
   };
 
+  const fetchAds = async () => {
+    try {
+      const res = await fetch('/api/listings');
+      if (res.ok) {
+        const data: Listing[] = await res.json();
+        setAdsList(data.filter(l => l.isAd === true));
+      } else {
+        const locals = getLocalListings();
+        setAdsList(locals.filter(l => l.isAd === true));
+      }
+    } catch (e) {
+      const locals = getLocalListings();
+      setAdsList(locals.filter(l => l.isAd === true));
+    }
+  };
+
+  const handleSyndicateSocial = async (adId: string) => {
+    setIsSyncing(true);
+    try {
+      const res = await fetch(`/api/admin/ads/${adId}/sync-social`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentUser?.id || 'usr-admin'}`
+        },
+        body: JSON.stringify({
+          syncMeta,
+          syncTikTok,
+          budget: parseFloat(syncBudget)
+        })
+      });
+      if (res.ok) {
+        setSuccessMsg("Social media campaign compiled and syndicated successfully to Meta Ads Manager & TikTok Spark Studios!");
+        fetchAds();
+        onRefreshListings();
+        setSelectedAdForSync(null);
+      } else {
+        alert("Syndication request rejected.");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Lost connectivity. Failed to complete syndication.");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
+    fetchAds();
   }, [currentUser?.id]);
 
   const selectRandomAvatar = () => {
@@ -280,6 +337,7 @@ export default function AdminPanel({ currentUser, onRefreshListings }: AdminPane
             description: adDescription,
             category: adCategory,
             imageUrl: adImageUrl,
+            videoUrl: adVideoUrl,
             adTagline: adTagline
           })
         });
@@ -320,6 +378,7 @@ export default function AdminPanel({ currentUser, onRefreshListings }: AdminPane
           mpesaReceipt: null,
           trackingCode: null,
           imageUrl: adImageUrl || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80",
+          videoUrl: adVideoUrl || "",
           bidHistory: [],
           isAd: true,
           adTagline: adTagline
@@ -333,8 +392,10 @@ export default function AdminPanel({ currentUser, onRefreshListings }: AdminPane
         setAdTitle('');
         setAdDescription('');
         setAdImageUrl('');
+        setAdVideoUrl('');
         setAdTagline('Sponsored Feature Deal');
         onRefreshListings();
+        fetchAds();
       } else {
         throw new Error('Failed to publish advertisement');
       }
@@ -690,6 +751,34 @@ export default function AdminPanel({ currentUser, onRefreshListings }: AdminPane
               </div>
 
               <div className="space-y-1">
+                <label className="font-bold text-gray-500 uppercase tracking-wider text-[10px] block">Campaign Video Ad Promo URL (Optional MP4)</label>
+                <input
+                  type="text"
+                  value={adVideoUrl}
+                  onChange={(e) => setAdVideoUrl(e.target.value)}
+                  placeholder="e.g. https://assets.mixkit.co/videos/preview/..."
+                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 focus:border-brand-primary rounded-xl focus:bg-white outline-hidden text-gray-850 font-mono"
+                />
+                <div className="flex flex-wrap gap-1.5 pt-1 uppercase text-[8px] font-bold">
+                  <span className="text-gray-400 self-center">Test Presets:</span>
+                  <button
+                    type="button"
+                    onClick={() => setAdVideoUrl("https://assets.mixkit.co/videos/preview/mixkit-commercial-shooting-of-various-types-of-shoes-34015-large.mp4")}
+                    className="px-2 py-0.5 bg-gray-200 text-gray-700 rounded-sm hover:bg-gray-300"
+                  >
+                    👟 Shoes Promo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAdVideoUrl("https://assets.mixkit.co/videos/preview/mixkit-rotating-display-of-a-golden-smartwatch-51631-large.mp4")}
+                    className="px-2 py-0.5 bg-gray-200 text-gray-700 rounded-sm hover:bg-gray-300"
+                  >
+                    ⌚ Smartwatch
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-1">
                 <label className="font-bold text-gray-500 uppercase tracking-wider text-[10px] block">Comprehensive Ad Description copy</label>
                 <textarea
                   required
@@ -714,10 +803,148 @@ export default function AdminPanel({ currentUser, onRefreshListings }: AdminPane
             <div className="mt-4 p-3 bg-amber-50 rounded-xl border border-amber-200 text-[10px] text-amber-900 leading-normal flex items-start gap-1.5 font-medium">
               <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
               <span>
-                <strong>Campaign Ads Info:</strong> Placing ads injects standard listings tagged with `isAd: true` directly to the top banner shop grid. These don't support bids, but rather click-throughs!
+                <strong>Campaign Ads Info:</strong> Placing ads injects standard listings tagged with `isAd: true` directly to the top banner shop grid. Supports both image backgrounds and sleek auto-looping hover videos!
               </span>
             </div>
 
+          </div>
+
+          {/* Social Media Syndicator Block */}
+          <div className="bg-white rounded-3xl border border-gray-100 p-5 shadow-2xs space-y-4">
+            <div className="flex items-center gap-2 border-b border-gray-100 pb-3">
+              <RefreshCw className="w-5 h-5 text-indigo-600" />
+              <div>
+                <h2 className="text-base font-display font-extrabold text-indigo-950">Meta & TikTok Syndicator</h2>
+                <p className="text-[11px] text-gray-400">Push, distribute and boost your active marketing campaigns directly into Meta Pixel and TikTok Spark Ads.</p>
+              </div>
+            </div>
+
+            {adsList.length === 0 ? (
+              <p className="text-[11px] text-gray-400 text-center py-4 italic">No active corporate ads found to syndicate. Publish one first above!</p>
+            ) : (
+              <div className="space-y-3">
+                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">Select Ad Campaign to Syndicate</span>
+                <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1">
+                  {adsList.map((ad) => (
+                    <div 
+                      key={ad.id}
+                      onClick={() => setSelectedAdForSync(ad)}
+                      className={`p-2 rounded-xl border cursor-pointer transition-all flex items-center justify-between text-xs font-semibold ${
+                        selectedAdForSync?.id === ad.id 
+                          ? 'bg-orange-50/70 border-brand-primary' 
+                          : 'bg-gray-50 hover:bg-white border-gray-200'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 truncate">
+                        <img 
+                          src={ad.imageUrl} 
+                          alt="" 
+                          className="w-8 h-8 rounded-md object-cover border border-gray-200 shrink-0" 
+                        />
+                        <div className="truncate">
+                          <p className="text-gray-800 text-[11px] font-bold truncate">{ad.title}</p>
+                          <p className="text-[9px] text-[#ea580c] truncate">{ad.adTagline}</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-1 shrink-0">
+                        {ad.isMetaSync && <span className="bg-blue-100 text-blue-700 text-[8px] font-bold px-1 py-0.2 rounded-sm border border-blue-200">Meta</span>}
+                        {ad.isTikTokSync && <span className="bg-rose-100 text-rose-700 text-[8px] font-bold px-1 py-0.2 rounded-sm border border-rose-200">TikTok</span>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {selectedAdForSync && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 5 }} 
+                    animate={{ opacity: 1, y: 0 }} 
+                    className="p-3.5 bg-gray-50 rounded-2xl border border-gray-150 space-y-3"
+                  >
+                    <h3 className="text-xs font-extrabold text-gray-800 flex items-center gap-1">
+                      Syndicating: <span className="text-[#ea580c]">{selectedAdForSync.title}</span>
+                    </h3>
+
+                    <div className="space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] text-gray-500 font-medium">Networks to target:</span>
+                        <div className="flex gap-3">
+                          <label className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-700 cursor-pointer">
+                            <input 
+                              type="checkbox" 
+                              checked={syncMeta} 
+                              onChange={(e) => setSyncMeta(e.target.checked)} 
+                              className="accent-blue-600 rounded-sm"
+                            />
+                            Meta Pages (Instagram/FB)
+                          </label>
+                          <label className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-700 cursor-pointer">
+                            <input 
+                              type="checkbox" 
+                              checked={syncTikTok} 
+                              onChange={(e) => setSyncTikTok(e.target.checked)} 
+                              className="accent-rose-500 rounded-sm"
+                            />
+                            TikTok For You Page
+                          </label>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="flex justify-between items-center text-[10px] text-gray-500 font-bold uppercase tracking-wider">
+                          <span>Distribute Ad Budget</span>
+                          <span className="text-[#2B7A1C]">KES {parseInt(syncBudget).toLocaleString()}</span>
+                        </div>
+                        <input 
+                          type="range" 
+                          min="1000" 
+                          max="50000" 
+                          step="1000"
+                          value={syncBudget} 
+                          onChange={(e) => setSyncBudget(e.target.value)} 
+                          className="w-full accent-indigo-900 cursor-pointer"
+                        />
+                        <p className="text-[9px] text-gray-400">Estimated campaign reach: <strong className="text-gray-700">{(parseInt(syncBudget) * 7.5).toLocaleString()} active users</strong> in Nairobi & Kisumu region.</p>
+                      </div>
+
+                      <button
+                        onClick={() => handleSyndicateSocial(selectedAdForSync.id)}
+                        disabled={isSyncing || (!syncMeta && !syncTikTok)}
+                        className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 disabled:opacity-40"
+                      >
+                        {isSyncing ? (
+                          <>
+                            <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Syndicating Global Pixels...
+                          </>
+                        ) : (
+                          <>
+                            <ExternalLink className="w-3.5 h-3.5" /> Deploy Ad Campaign and Boost Reach
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Simulated Campaign Real-time Performance Feed */}
+                <div className="border-t border-gray-100 pt-3 space-y-2">
+                  <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Live Social Campaigns Overview</h4>
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className="bg-blue-50/50 p-2 rounded-xl border border-blue-100">
+                      <span className="text-[9px] text-gray-400 block font-medium">Total Impressions</span>
+                      <strong className="text-xs font-mono text-gray-800">482,910</strong>
+                    </div>
+                    <div className="bg-rose-50/50 p-2 rounded-xl border border-rose-100">
+                      <span className="text-[9px] text-gray-400 block font-medium">Total Clicks</span>
+                      <strong className="text-xs font-mono text-gray-800">32,593</strong>
+                    </div>
+                    <div className="bg-emerald-50/50 p-2 rounded-xl border border-emerald-100">
+                      <span className="text-[9px] text-gray-400 block font-medium">Net CTR %</span>
+                      <strong className="text-xs font-mono text-emerald-700">6.75% 📈</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Prompt quick tips */}

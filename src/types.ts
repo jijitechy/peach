@@ -50,6 +50,16 @@ export interface Listing {
   autoBidderName?: string | null;
   autoBidLimit?: number | null;
   autoBidLocation?: string | null;
+  allowBidding?: boolean;
+  videoUrl?: string;
+  isTikTokSync?: boolean;
+  isMetaSync?: boolean;
+  socialCampaignStats?: {
+    metaReach: number;
+    tikTokReach: number;
+    metaClicks: number;
+    tikTokClicks: number;
+  } | null;
 }
 
 export interface Bid {

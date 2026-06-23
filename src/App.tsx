@@ -145,6 +145,8 @@ export default function App() {
     reader.onloadend = () => {
       const base64String = reader.result as string;
       setFormImageUrl(base64String);
+      // Automatically trigger AI Copilot Details Draft with the uploaded image
+      handleAiCopilotDraft(formTitle, base64String);
     };
     reader.readAsDataURL(file);
   };
@@ -208,6 +210,8 @@ export default function App() {
   const [formSize, setFormSize] = useState<string>("");
   const [formWarranty, setFormWarranty] = useState<string>("");
   const [formMinIncrement, setFormMinIncrement] = useState<string>("500");
+  const [formAllowBidding, setFormAllowBidding] = useState<boolean>(true);
+  const [formVideoUrl, setFormVideoUrl] = useState<string>("");
 
   // Post form AI Assist triggers
   const [isAiDrafting, setIsAiDrafting] = useState<boolean>(false);
@@ -248,9 +252,11 @@ export default function App() {
   }, []);
 
   // Handle auto pre-generation of descriptions + optimal bid pricing guidance with Gemini
-  const handleAiCopilotDraft = async () => {
-    if (!formTitle.trim() && !formImageUrl) {
-      alert("Please provide at least a title for the item OR upload/specify a product picture first so our AI Co-pilot can analyze and autofill all details at once.");
+  async function handleAiCopilotDraft(overrideTitle?: string, overrideImageUrl?: string) {
+    const titleToUse = overrideTitle !== undefined ? overrideTitle : formTitle;
+    const imageToUse = overrideImageUrl !== undefined ? overrideImageUrl : formImageUrl;
+
+    if (!titleToUse.trim() && !imageToUse) {
       return;
     }
 
@@ -259,16 +265,16 @@ export default function App() {
 
     try {
       const bodyPayload: any = {
-        title: formTitle,
+        title: titleToUse,
         category: formCategory,
         condition: formCondition,
         location: formLocation
       };
 
       // If they uploaded or specified a base64 image
-      if (formImageUrl && formImageUrl.startsWith("data:")) {
+      if (imageToUse && imageToUse.startsWith("data:")) {
         try {
-          const parts = formImageUrl.split(",");
+          const parts = imageToUse.split(",");
           const mimeType = parts[0].match(/:(.*?);/)?.[1] || "image/png";
           const base64Data = parts[1];
           bodyPayload.image = {
@@ -304,7 +310,7 @@ export default function App() {
         setAiValuationText(`AI Listing Autofill complete! Suggested Starting bid: KES ${data.recommendedStartingBid?.toLocaleString()} | Suggested Reserve: KES ${data.recommendedReservePrice?.toLocaleString()}`);
 
         // Set matching product template image if empty
-        if (!formImageUrl) {
+        if (!imageToUse) {
           const targetCategory = data.category || formCategory;
           if (targetCategory === "Electronics") {
             setFormImageUrl("https://images.unsplash.com/photo-1546868871-7041f2a55e12?auto=format&fit=crop&w=600&q=80"); // apple watch mock
@@ -320,15 +326,14 @@ export default function App() {
         setShowAiSuccessToast(true);
         setTimeout(() => setShowAiSuccessToast(false), 6000);
       } else {
-        alert("Autofill endpoint returned a generation error.");
+        console.warn("Autofill endpoint returned a generation error.");
       }
     } catch (e) {
       console.error(e);
-      alert("Failed to communicate with the premium AI Copilot server endpoint.");
     } finally {
       setIsAiDrafting(false);
     }
-  };
+  }
 
   // Submit Listing creation handler
   const handleCreateListing = async (e: React.FormEvent) => {
@@ -339,7 +344,7 @@ export default function App() {
     }
 
     if (!formTitle || !formStartingBid) {
-      alert("Please provide at least a title and a starting bid amount.");
+      alert("Please provide at least a title and a pricing offer amount.");
       return;
     }
 
@@ -362,11 +367,13 @@ export default function App() {
             reservePrice: formReservePrice ? parseFloat(formReservePrice) : undefined,
             durationHours: parseFloat(formDurationHours),
             imageUrl: formImageUrl || undefined,
+            videoUrl: formVideoUrl || undefined,
             brand: formBrand,
             specs: formSpecs,
             size: formSize,
             warranty: formWarranty,
-            minIncrement: parseFloat(formMinIncrement) || 500
+            minIncrement: parseFloat(formMinIncrement) || 500,
+            allowBidding: formAllowBidding
           })
         });
         if (response.ok) {
@@ -405,12 +412,14 @@ export default function App() {
           mpesaReceipt: null,
           trackingCode: null,
           imageUrl: formImageUrl || "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=600&q=80",
+          videoUrl: formVideoUrl || "",
           bidHistory: [],
           brand: formBrand,
           specs: formSpecs,
           size: formSize,
           warranty: formWarranty,
-          minIncrement: parseFloat(formMinIncrement) || 500
+          minIncrement: parseFloat(formMinIncrement) || 500,
+          allowBidding: formAllowBidding
         };
         createLocalListing(newListing);
         publishSuccess = true;
@@ -423,11 +432,13 @@ export default function App() {
         setFormStartingBid("");
         setFormReservePrice("");
         setFormImageUrl("");
+        setFormVideoUrl("");
         setFormBrand("");
         setFormSpecs("");
         setFormSize("");
         setFormWarranty("");
         setFormMinIncrement("500");
+        setFormAllowBidding(true);
         setAiValuationText("");
         
         fetchListings();
@@ -530,6 +541,11 @@ export default function App() {
                     type="text"
                     value={formTitle}
                     onChange={(e) => setFormTitle(e.target.value)}
+                    onBlur={() => {
+                      if (formTitle.trim()) {
+                        handleAiCopilotDraft(formTitle, formImageUrl);
+                      }
+                    }}
                     placeholder="e.g. HP EliteBook 840 G5 Core i7"
                     className="flex-1 px-3 py-2.5 bg-white border border-gray-200 focus:border-brand-primary rounded-xl font-semibold outline-hidden text-sm"
                   />
@@ -592,28 +608,75 @@ export default function App() {
                 </div>
               </div>
 
+              {/* Sales Method Option Selection toggle */}
+              <div className="space-y-2 p-3 bg-gray-50 rounded-2xl border border-gray-100">
+                <label className="font-bold uppercase tracking-wider block text-[10px] text-gray-550">Sales Pricing Strategy</label>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormAllowBidding(true);
+                      if (!formMinIncrement) setFormMinIncrement("500");
+                    }}
+                    className={`py-2 px-3 rounded-xl font-bold transition-all border ${
+                      formAllowBidding
+                        ? "bg-gray-900 border-gray-950 text-white"
+                        : "bg-white border-gray-200 text-gray-600 hover:bg-gray-100"
+                    }`}
+                  >
+                    🔨 Auction & Bidding
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormAllowBidding(false);
+                      setFormMinIncrement("0");
+                    }}
+                    className={`py-2 px-3 rounded-xl font-bold transition-all border ${
+                      !formAllowBidding
+                        ? "bg-gray-900 border-gray-950 text-white"
+                        : "bg-white border-gray-200 text-gray-600 hover:bg-gray-100"
+                    }`}
+                  >
+                    ⚡ Fixed Price Buy-Now
+                  </button>
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-3.5">
                 <div className="space-y-1">
-                  <label className="font-bold uppercase tracking-wider block text-[10px] text-gray-500">Starting Bid (KES)</label>
+                  <label className="font-bold uppercase tracking-wider block text-[10px] text-gray-500">
+                    {formAllowBidding ? "Starting Bid (KES)" : "Direct Buy-Now Price (KES)"}
+                  </label>
                   <input
                     type="number"
+                    required
                     value={formStartingBid}
                     onChange={(e) => setFormStartingBid(e.target.value)}
-                    placeholder="25000"
+                    placeholder={formAllowBidding ? "25000" : "28000"}
                     className="w-full px-3 py-2 bg-white border border-gray-200 focus:border-brand-primary rounded-xl outline-hidden text-sm"
                   />
                 </div>
 
-                <div className="space-y-1">
-                  <label className="font-bold uppercase tracking-wider block text-[10px] text-gray-500">Reserve Price (KES)</label>
-                  <input
-                    type="number"
-                    value={formReservePrice}
-                    onChange={(e) => setFormReservePrice(e.target.value)}
-                    placeholder="30000"
-                    className="w-full px-3 py-2 bg-white border border-gray-200 focus:border-brand-primary rounded-xl outline-hidden text-sm"
-                  />
-                </div>
+                {formAllowBidding ? (
+                  <div className="space-y-1">
+                    <label className="font-bold uppercase tracking-wider block text-[10px] text-gray-500">Reserve Price (KES)</label>
+                    <input
+                      type="number"
+                      value={formReservePrice}
+                      onChange={(e) => setFormReservePrice(e.target.value)}
+                      placeholder="30000"
+                      className="w-full px-3 py-2 bg-white border border-gray-200 focus:border-brand-primary rounded-xl outline-hidden text-sm"
+                    />
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    <label className="font-bold uppercase tracking-wider block text-[10px] text-gray-450">Escrow Security Seal</label>
+                    <div className="px-3 py-2 bg-emerald-50 text-[10px] text-emerald-800 font-bold border border-emerald-100 rounded-xl leading-snug">
+                      ✅ Safe Instant Direct Escrow Transfer Enabled
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-3.5">
@@ -633,18 +696,29 @@ export default function App() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-bold uppercase tracking-wider block text-[10px] text-gray-500">Auction Duration</label>
-                  <select
-                    value={formDurationHours}
-                    onChange={(e) => setFormDurationHours(e.target.value)}
-                    className="w-full px-3 py-2 bg-white border border-gray-200 focus:border-brand-primary rounded-xl outline-hidden text-sm"
-                  >
-                    <option value="0.5">30 Minutes (Demo-Speed)</option>
-                    <option value="2">2 Hours</option>
-                    <option value="12">12 Hours</option>
-                    <option value="24">24 Hours</option>
-                    <option value="72">3 Days</option>
-                  </select>
+                  <label className="font-bold uppercase tracking-wider block text-[10px] text-gray-500">
+                    {formAllowBidding ? "Auction Duration" : "Listing Lifespan"}
+                  </label>
+                  {formAllowBidding ? (
+                    <select
+                      value={formDurationHours}
+                      onChange={(e) => setFormDurationHours(e.target.value)}
+                      className="w-full px-3 py-2 bg-white border border-gray-200 focus:border-brand-primary rounded-xl outline-hidden text-sm"
+                    >
+                      <option value="0.5">30 Minutes (Demo-Speed)</option>
+                      <option value="2">2 Hours</option>
+                      <option value="12">12 Hours</option>
+                      <option value="24">24 Hours</option>
+                      <option value="72">3 Days</option>
+                    </select>
+                  ) : (
+                    <select
+                      disabled
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-150 text-gray-400 rounded-xl outline-hidden text-xs font-semibold"
+                    >
+                      <option value="infinite">Direct Instant / Cancel Anytime</option>
+                    </select>
+                  )}
                 </div>
               </div>
 
@@ -707,9 +781,49 @@ export default function App() {
                   type="text"
                   value={formImageUrl}
                   onChange={(e) => setFormImageUrl(e.target.value)}
+                  onBlur={() => {
+                    if (formImageUrl.trim()) {
+                      handleAiCopilotDraft(formTitle, formImageUrl);
+                    }
+                  }}
                   placeholder="https://images.unsplash.com/photo-..."
                   className="w-full px-3 py-2 bg-white border border-gray-200 focus:border-brand-primary rounded-xl outline-hidden text-sm"
                 />
+              </div>
+
+              {/* Video URL Promo Option */}
+              <div className="space-y-1">
+                <label className="font-bold uppercase tracking-wider block text-[10px] text-gray-500">Aesthetic Promotional Video Link (Optional)</label>
+                <input
+                  type="text"
+                  value={formVideoUrl}
+                  onChange={(e) => setFormVideoUrl(e.target.value)}
+                  placeholder="e.g. https://videocdn.pexels.com/..."
+                  className="w-full px-3 py-2 bg-white border border-gray-200 focus:border-brand-primary rounded-xl outline-hidden text-sm text-gray-850 font-mono"
+                />
+                <div className="flex flex-wrap gap-1.5 mt-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setFormVideoUrl("https://assets.mixkit.co/videos/preview/mixkit-holding-a-smartphone-preview-43288-large.mp4")}
+                    className="text-[9px] bg-indigo-50 hover:bg-indigo-100 text-[#ea580c] font-bold px-2 py-0.5 rounded-full border border-indigo-150"
+                  >
+                    🎬 Smart Tech Loop
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormVideoUrl("https://assets.mixkit.co/videos/preview/mixkit-woman-holding-a-red-shopping-bag-preview-33758-large.mp4")}
+                    className="text-[9px] bg-indigo-50 hover:bg-indigo-100 text-[#ea580c] font-bold px-2 py-0.5 rounded-full border border-indigo-150"
+                  >
+                    🛍️ Fashion Promo Loop
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormVideoUrl("https://assets.mixkit.co/videos/preview/mixkit-delivery-man-handing-over-a-parcel-preview-34444-large.mp4")}
+                    className="text-[9px] bg-indigo-50 hover:bg-indigo-100 text-[#ea580c] font-bold px-2 py-0.5 rounded-full border border-indigo-150"
+                  >
+                    📦 Peach Courier Loop
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-1">

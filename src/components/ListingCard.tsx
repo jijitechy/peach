@@ -13,10 +13,16 @@ interface ListingCardProps {
 export default function ListingCard({ listing, onClick, isFavorited, onToggleFavorite }: ListingCardProps) {
   const [timeLeft, setTimeLeft] = useState<string>("");
   const [isExpired, setIsExpired] = useState<boolean>(false);
+  const [isHovered, setIsHovered] = useState<boolean>(false);
 
   useEffect(() => {
     if (listing.isAd) {
       setTimeLeft("Featured Campaign");
+      setIsExpired(false);
+      return;
+    }
+    if (listing.allowBidding === false) {
+      setTimeLeft("Buy Now ⚡");
       setIsExpired(false);
       return;
     }
@@ -44,7 +50,7 @@ export default function ListingCard({ listing, onClick, isFavorited, onToggleFav
     calculateTimeLeft();
     const interval = setInterval(calculateTimeLeft, 1000);
     return () => clearInterval(interval);
-  }, [listing.endTime, listing.isAd]);
+  }, [listing.endTime, listing.isAd, listing.allowBidding]);
 
   const getConditionColor = (cond: string) => {
     switch (cond.toLowerCase()) {
@@ -59,6 +65,8 @@ export default function ListingCard({ listing, onClick, isFavorited, onToggleFav
 
   return (
     <div 
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       className={`group bg-white rounded-2xl border transition-all overflow-hidden relative flex flex-col justify-between ${
         isUserWinner 
           ? "border-emerald-500 ring-2 ring-emerald-500/20 shadow-lg trust-card scale-[1.01]" 
@@ -67,12 +75,36 @@ export default function ListingCard({ listing, onClick, isFavorited, onToggleFav
     >
       {/* Visual Header Image */}
       <div className="relative aspect-video w-full overflow-hidden bg-gray-50">
-        <img 
-          src={listing.imageUrl} 
-          alt={listing.title} 
-          referrerPolicy="no-referrer"
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-        />
+        {listing.videoUrl && isHovered ? (
+          <video 
+            src={listing.videoUrl} 
+            autoPlay 
+            muted 
+            loop 
+            playsInline 
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <img 
+            src={listing.imageUrl} 
+            alt={listing.title} 
+            referrerPolicy="no-referrer"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        )}
+
+        {listing.videoUrl && !isHovered && (
+          <div className="absolute inset-0 bg-black/15 flex items-center justify-center transition-opacity hover:opacity-100 pointer-events-none">
+            <div className="bg-orange-600/90 text-white rounded-full p-2 animate-pulse shadow-md">
+              <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            <span className="absolute bottom-2 left-2 bg-black/60 text-white text-[8px] font-bold tracking-widest uppercase py-0.5 px-1.5 rounded-md">
+              Hover to Play Video Ad
+            </span>
+          </div>
+        )}
 
         {/* Heart Favorite toggle button overlay */}
         <button
@@ -97,7 +129,7 @@ export default function ListingCard({ listing, onClick, isFavorited, onToggleFav
         <div className="absolute top-3 left-3 flex flex-wrap gap-1">
           {listing.isAd ? (
             <span className="bg-amber-500 text-white text-[10px] font-bold tracking-wider px-2.5 py-1 rounded-full shadow-xs uppercase">
-              Sponsor Ad
+              {listing.videoUrl ? "🎥 Video Sponsor" : "Sponsor Ad"}
             </span>
           ) : (
             <span className={`text-[10px] font-bold tracking-wide uppercase px-2.5 py-1 rounded-full ${getConditionColor(listing.condition)}`}>
@@ -114,9 +146,11 @@ export default function ListingCard({ listing, onClick, isFavorited, onToggleFav
           <span className={`text-[10px] sm:text-xs font-mono font-semibold px-2.5 py-1 rounded-full shadow-md flex items-center gap-1 border ${
             isExpired 
               ? "bg-red-50 text-red-650 border-red-200" 
+              : listing.allowBidding === false
+              ? "bg-[#2563eb] text-white border-blue-500"
               : "bg-white text-gray-800 border-gray-100"
           }`}>
-            <Clock className={`w-3.5 h-3.5 ${isExpired ? "text-red-500 animate-pulse" : "text-brand-primary"}`} />
+            <Clock className={`w-3.5 h-3.5 ${isExpired ? "text-red-500 animate-pulse" : listing.allowBidding === false ? "text-white" : "text-brand-primary"}`} />
             {timeLeft}
           </span>
         </div>
@@ -150,7 +184,26 @@ export default function ListingCard({ listing, onClick, isFavorited, onToggleFav
         {listing.isAd ? (
           <div className="mt-4 pt-3 border-t border-gray-50 text-left">
             <span className="text-[10px] font-sans text-orange-600 block uppercase tracking-wider font-extrabold">{listing.adTagline || "Sponsored Corporate Deal"}</span>
-            <span className="text-xs text-gray-400">Exclusive campaign hosted safely on Peach. Click for details.</span>
+            <span className="text-xs text-gray-400">{listing.videoUrl ? "🎥 Premium Video Brand Campaign Deal." : "Exclusive campaign hosted safely on Peach. Click for details."}</span>
+          </div>
+        ) : listing.allowBidding === false ? (
+          <div className="mt-4 pt-3 border-t border-gray-50 flex items-center justify-between">
+            <div>
+              <span className="text-[10px] font-sans text-gray-400 block uppercase tracking-wider font-semibold">Immediate Price</span>
+              <div className="flex items-baseline gap-1">
+                <span className="text-sm font-sans font-extrabold text-[#2563eb]">KES</span>
+                <span className="text-base sm:text-lg font-display font-bold text-gray-900">{listing.startingBid.toLocaleString()}</span>
+              </div>
+            </div>
+            
+            <div className="text-right">
+              <span className="bg-blue-50 border border-blue-200 px-2.5 py-0.5 rounded-full text-[9px] font-extrabold text-blue-700 inline-block uppercase">
+                ⚡ Buy Instantly
+              </span>
+              <span className="text-[9px] text-[#2B7A1C] block mt-1 font-bold">
+                100% Escrow safe
+              </span>
+            </div>
           </div>
         ) : (
           <div className="mt-4 pt-3 border-t border-gray-50 flex items-center justify-between">
@@ -181,7 +234,7 @@ export default function ListingCard({ listing, onClick, isFavorited, onToggleFav
             onClick={onClick}
             className="w-full py-2.5 text-xs font-bold rounded-xl bg-orange-600 hover:bg-orange-500 text-white flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
           >
-            <span>Learn More & Explore Deal</span>
+            <span>{listing.videoUrl ? "🎥 Watch Promo Video Campaign" : "Learn More & Explore Deal"}</span>
           </button>
         ) : isUserWinner ? (
           <button 
@@ -190,6 +243,14 @@ export default function ListingCard({ listing, onClick, isFavorited, onToggleFav
           >
             <Shield className="w-4 h-4 text-amber-300" />
             Proceed to Escrow Checkout
+          </button>
+        ) : listing.allowBidding === false ? (
+          <button 
+            onClick={onClick}
+            className="w-full py-2.5 text-xs font-bold rounded-xl shadow-md bg-blue-600 hover:bg-blue-700 text-white transition-colors flex items-center justify-center gap-1.5 cursor-pointerActive"
+          >
+            <Shield className="w-3.5 h-3.5 text-blue-200" />
+            Buy Directly with M-Pesa
           </button>
         ) : (
           <button 

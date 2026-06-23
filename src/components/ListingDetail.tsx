@@ -588,7 +588,7 @@ export default function ListingDetail({
           <div className="bg-gray-50 rounded-2xl border border-gray-200/80 p-4 sm:p-5">
             
             {/* 1. Bid Panel (Active status) */}
-            {listing.status === "active" && (
+            {listing.status === "active" && listing.allowBidding !== false && (
               <div className="space-y-4">
                 <div className="flex justify-between items-center bg-white p-3 rounded-xl border border-gray-150">
                   <div>
@@ -707,16 +707,27 @@ export default function ListingDetail({
               </div>
             )}
 
-            {/* 2. Checkout Panel (Completed state & winner is User) */}
-            {listing.status === "completed" && isUserWinner && listing.escrowStatus === "pending_payment" && (
+            {/* 2. Checkout Panel (Completed state or direct active Buy-Now purchase) */}
+            {((listing.status === "completed" && isUserWinner && listing.escrowStatus === "pending_payment") ||
+              (listing.status === "active" && listing.allowBidding === false)) && (
               <div className="space-y-4">
-                <div className="bg-emerald-600 text-white p-4 rounded-xl text-center">
-                  <Award className="w-8 h-8 mx-auto text-amber-300 animate-bounce" />
-                  <h3 className="text-sm font-display font-bold uppercase mt-1.5 tracking-wide">Congratulation, You Won!</h3>
-                  <p className="text-xs text-emerald-100 mt-1">
-                    Your highest bid of <strong className="text-white">KES {listing.currentBid.toLocaleString()}</strong> has been awarded to purchase this listing.
-                  </p>
-                </div>
+                {listing.allowBidding === false ? (
+                  <div className="bg-gradient-to-br from-blue-600 to-indigo-700 text-white p-4 rounded-xl text-center shadow-md">
+                    <ShieldCheck className="w-8 h-8 mx-auto text-amber-300 animate-pulse" />
+                    <h3 className="text-sm font-display font-bold uppercase mt-1.5 tracking-wide">Secure Direct Buy-Now</h3>
+                    <p className="text-xs text-blue-100 mt-1">
+                      Purchase this listing immediately at direct fixed checkout value of <strong className="text-white">KES {listing.startingBid.toLocaleString()}</strong>.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="bg-emerald-600 text-white p-4 rounded-xl text-center">
+                    <Award className="w-8 h-8 mx-auto text-amber-300 animate-bounce" />
+                    <h3 className="text-sm font-display font-bold uppercase mt-1.5 tracking-wide">Congratulation, You Won!</h3>
+                    <p className="text-xs text-emerald-100 mt-1">
+                      Your highest bid of <strong className="text-white">KES {listing.currentBid.toLocaleString()}</strong> has been awarded to purchase this listing.
+                    </p>
+                  </div>
+                )}
 
                 <div className="space-y-3 pt-2">
                   <h4 className="text-xs font-bold text-gray-700 uppercase tracking-widest border-b pb-1">Secure Delivery & Checkout</h4>
@@ -806,12 +817,16 @@ export default function ListingDetail({
                   {/* Final calculations layout */}
                   <div className="bg-white rounded-xl p-3 border border-gray-150 space-y-1 text-xs">
                     <div className="flex justify-between">
-                      <span className="text-gray-400">Winning Bid:</span>
-                      <strong className="text-gray-700">KES {listing.currentBid.toLocaleString()}</strong>
+                      <span className="text-gray-400">{listing.allowBidding === false ? "Fixed Sale Price:" : "Winning Bid:"}</span>
+                      <strong className="text-gray-700">
+                        KES {(listing.allowBidding === false ? listing.startingBid : listing.currentBid).toLocaleString()}
+                      </strong>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-400">Escrow Security Fee (1.5%):</span>
-                      <strong className="text-safaricom-green">KES {Math.max(250, Math.floor(listing.currentBid * 0.015)).toLocaleString()}</strong>
+                      <strong className="text-safaricom-green">
+                        KES {Math.max(250, Math.floor((listing.allowBidding === false ? listing.startingBid : listing.currentBid) * 0.015)).toLocaleString()}
+                      </strong>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-400">Delivery Fee:</span>
@@ -820,7 +835,7 @@ export default function ListingDetail({
                     <div className="flex justify-between border-t border-dashed pt-1.5 mt-1 text-sm font-bold">
                       <span className="text-gray-950 font-display">Total to Pay:</span>
                       <span className="text-brand-primary">
-                        KES {(listing.currentBid + Math.max(250, Math.floor(listing.currentBid * 0.015)) + deliveryFee).toLocaleString()}
+                        KES {((listing.allowBidding === false ? listing.startingBid : listing.currentBid) + Math.max(250, Math.floor((listing.allowBidding === false ? listing.startingBid : listing.currentBid) * 0.015)) + deliveryFee).toLocaleString()}
                       </span>
                     </div>
                   </div>
@@ -834,7 +849,7 @@ export default function ListingDetail({
                       alt="M-pesa" 
                       className="h-4 object-contain brightness-0 invert"
                     />
-                    Initiate Escrow payment
+                    Initiate Secure Escrow Checkout
                   </button>
                 </div>
               </div>
