@@ -1,0 +1,27 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Allow open read and write across all collections used by the server backend.
+    match /listings/{listingId} {
+      allow read, write: if true;
+    }
+
+    match /bids/{bidId} {
+      allow read, write: if true;
+    }
+
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+
+    match /activities/{activityId} {
+      allow read, write: if true;
+    }
+
+    // Safety Net Catch-All (Default allow to ensure any developer sandbox additions work seamlessly)
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}

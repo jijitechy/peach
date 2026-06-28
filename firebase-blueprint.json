@@ -1,0 +1,55 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Represents a safe commerce user or admin on Peach.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier of the user matches uid." },
+        "username": { "type": "string", "description": "Registered email or account handle." },
+        "name": { "type": "string", "description": "Legal business or individual display name." },
+        "phone": { "type": "string", "description": "Safaricom line for transaction notifications." },
+        "role": { "type": "string", "enum": ["buyer", "bidder", "seller", "admin"] },
+        "balance": { "type": "number", "description": "Simulated balance level in KES." },
+        "avatar": { "type": "string", "description": "Profile picture thumbnail." }
+      },
+      "required": ["id", "username", "name", "phone", "role", "balance"]
+    },
+    "Listing": {
+      "title": "Listing",
+      "description": "Auction product or corporate sponsor ad catalog listing.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "condition": { "type": "string" },
+        "location": { "type": "string" },
+        "startingBid": { "type": "number" },
+        "reservePrice": { "type": "number" },
+        "currentBid": { "type": "number" },
+        "bidsCount": { "type": "number" },
+        "imageUrl": { "type": "string" },
+        "sellerId": { "type": "string" },
+        "sellerName": { "type": "string" },
+        "endTime": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["live", "completed", "expired"] },
+        "isAd": { "type": "boolean" },
+        "adTagline": { "type": "string" }
+      },
+      "required": ["id", "title", "category", "condition", "location", "startingBid", "reservePrice", "currentBid", "bidsCount", "imageUrl", "sellerId", "status"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Public and secure profile data lookup records."
+    },
+    "/listings/{listingId}": {
+      "schema": "Listing",
+      "description": "State database of active peer-to-peer and sponsor listings."
+    }
+  }
+}
