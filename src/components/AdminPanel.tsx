@@ -319,7 +319,7 @@ export default function AdminPanel({ currentUser, onRefreshListings }: AdminPane
     setSuccessMsg(null);
 
     if (!adTitle || !adDescription) {
-      setErrorMsg('Ad title and marketing text blocks are required.');
+      setErrorMsg('Ad title and product boost text blocks are required.');
       return;
     }
 
@@ -746,7 +746,7 @@ export default function AdminPanel({ currentUser, onRefreshListings }: AdminPane
                   onClick={() => setAdImageUrl("https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80")}
                   className="text-[9px] text-[#ea580c] font-bold block hover:underline"
                 >
-                  ⚡ Use Peach Tech Marketing Placeholder Ad
+                  ⚡ Use Peach Tech Product Boost Placeholder Ad
                 </button>
               </div>
 
@@ -785,7 +785,7 @@ export default function AdminPanel({ currentUser, onRefreshListings }: AdminPane
                   value={adDescription}
                   onChange={(e) => setAdDescription(e.target.value)}
                   rows={4}
-                  placeholder="Write a highly strategic marketing description to showcase this sponsor page's values..."
+                  placeholder="Write a highly strategic product boost description to showcase this sponsor page's values..."
                   className="w-full px-3 py-2 bg-gray-50 border border-gray-200 focus:border-brand-primary rounded-xl focus:bg-white outline-hidden font-sans text-gray-850"
                 />
               </div>
@@ -815,7 +815,7 @@ export default function AdminPanel({ currentUser, onRefreshListings }: AdminPane
               <RefreshCw className="w-5 h-5 text-indigo-600" />
               <div>
                 <h2 className="text-base font-display font-extrabold text-indigo-950">Meta & TikTok Syndicator</h2>
-                <p className="text-[11px] text-gray-400">Push, distribute and boost your active marketing campaigns directly into Meta Pixel and TikTok Spark Ads.</p>
+                <p className="text-[11px] text-gray-400">Push, distribute and boost your active product boosts directly into Meta Pixel and TikTok Spark Ads.</p>
               </div>
             </div>
 

@@ -783,7 +783,7 @@ export default function App() {
               </div>
 
               <div className="space-y-1">
-                <label className="font-bold uppercase tracking-wider block text-[10px] text-gray-500">Marketing Sales Description</label>
+                <label className="font-bold uppercase tracking-wider block text-[10px] text-gray-500">Product Boost Sales Description</label>
                 <textarea
                   value={formDescription}
                   onChange={(e) => setFormDescription(e.target.value)}

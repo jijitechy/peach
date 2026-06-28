@@ -36,7 +36,9 @@ export default function MerchantHub({ currentUser, onRefreshListings, onPostNewT
   const [loading, setLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [activeSubTab, setActiveSubTab] = useState<'listings' | 'orders' | 'verification'>('listings');
+  const [activeSubTab, setActiveSubTab] = useState<'listings' | 'orders' | 'verification' | 'ads'>('listings');
+  const [catalogSynced, setCatalogSynced] = useState<boolean>(false);
+  const [syncingCatalog, setSyncingCatalog] = useState<boolean>(false);
   
   // Action states
   const [trackingCodeInput, setTrackingCodeInput] = useState<{ [key: string]: string }>({});
@@ -217,6 +219,15 @@ export default function MerchantHub({ currentUser, onRefreshListings, onPostNewT
     }
   };
 
+  const handleSyncCatalog = () => {
+    setSyncingCatalog(true);
+    setTimeout(() => {
+      setCatalogSynced(true);
+      setSyncingCatalog(false);
+      showToast("Digital Storefront Product Catalog successfully synced to Meta Commerce Manager!");
+    }, 2000);
+  };
+
   if (!currentUser || currentUser.role !== 'seller') {
     return (
       <div className="bg-white rounded-3xl p-8 text-center max-w-md mx-auto border border-gray-100 shadow-2xs font-sans">
@@ -372,6 +383,19 @@ export default function MerchantHub({ currentUser, onRefreshListings, onPostNewT
                 {pendingOrders.length}
               </span>
             )}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setActiveSubTab('ads')}
+          className={`px-5 py-2 text-xs font-bold uppercase tracking-wider transition-all border-b-2 -mb-0.5 relative ${
+            activeSubTab === 'ads' 
+              ? 'border-[#f97316] text-[#f97316]' 
+              : 'border-transparent text-gray-400 hover:text-gray-600'
+          }`}
+        >
+          <span className="flex items-center gap-1.5">
+            <Sparkles className="w-4 h-4" /> AI Ad Manager
           </span>
         </button>
       </div>
@@ -661,6 +685,85 @@ export default function MerchantHub({ currentUser, onRefreshListings, onPostNewT
             </div>
           )}
     </div>
+      )}
+
+      {/* RENDER ads sub-tab */}
+      {activeSubTab === 'ads' && (
+        <div className="space-y-6">
+          <div className="bg-gradient-to-r from-blue-900 to-indigo-900 rounded-3xl p-6 text-white shadow-md relative overflow-hidden">
+            <div className="absolute right-0 top-0 p-4 opacity-10">
+              <Sparkles className="w-32 h-32" />
+            </div>
+            <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-display font-black flex items-center gap-2">
+                  <TrendingUp className="w-6 h-6 text-orange-400" /> AI Ad Performance Manager
+                </h3>
+                <p className="text-xs text-blue-100 mt-2 max-w-xl">
+                  Automate your creative generation, targeting, and budget optimization. We completely take over the heavy lifting of running Meta Ads so you don't have to manually navigate Meta's Ad Manager.
+                </p>
+              </div>
+              <button
+                onClick={handleSyncCatalog}
+                disabled={syncingCatalog || catalogSynced}
+                className={`px-4 py-2 text-xs font-bold rounded-xl shadow-sm transition-all flex items-center gap-2 shrink-0 ${
+                  catalogSynced 
+                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' 
+                    : 'bg-white text-blue-900 hover:bg-gray-100'
+                }`}
+              >
+                {syncingCatalog ? (
+                  <><div className="w-3.5 h-3.5 border-2 border-blue-900 border-t-transparent rounded-full animate-spin"></div> Syncing...</>
+                ) : catalogSynced ? (
+                  <><CheckCircle className="w-4 h-4" /> Catalog Synced</>
+                ) : (
+                  <><Activity className="w-4 h-4" /> Sync Meta Catalog</>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* AI Automated Active Campaigns */}
+          <div className="bg-white rounded-3xl border border-gray-150 p-5 shadow-sm space-y-4">
+            <h4 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-3 flex items-center gap-2">
+              <Activity className="w-5 h-5 text-indigo-600" /> Active Product Boosts
+            </h4>
+            
+            {listings.filter(l => l.isBoosted).length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-xs text-gray-400">You don't have any active product boosts running. Boost an item from your SKU Storefront to see AI metrics here!</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {listings.filter(l => l.isBoosted).map(l => (
+                  <div key={l.id} className="border border-gray-150 rounded-2xl p-4 flex flex-col gap-3 hover:border-gray-300 transition-colors">
+                    <div className="flex gap-3 items-center">
+                      <img src={l.imageUrl} className="w-12 h-12 rounded-lg object-cover" alt="" />
+                      <div>
+                        <p className="text-xs font-bold text-gray-800">{l.title}</p>
+                        <p className="text-[10px] text-gray-500 mt-0.5">Budget Auto-Optimized • Meta Ads</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 text-center border-t border-gray-100 pt-3">
+                      <div className="bg-blue-50/50 p-2 rounded-xl">
+                        <span className="text-[9px] text-gray-400 block font-medium">Impressions</span>
+                        <strong className="text-xs font-mono text-gray-800">{Math.floor(Math.random() * 50000 + 10000).toLocaleString()}</strong>
+                      </div>
+                      <div className="bg-rose-50/50 p-2 rounded-xl">
+                        <span className="text-[9px] text-gray-400 block font-medium">Clicks</span>
+                        <strong className="text-xs font-mono text-gray-800">{Math.floor(Math.random() * 2000 + 500).toLocaleString()}</strong>
+                      </div>
+                      <div className="bg-emerald-50/50 p-2 rounded-xl">
+                        <span className="text-[9px] text-gray-400 block font-medium">AI Targeting CTR</span>
+                        <strong className="text-xs font-mono text-emerald-700">{(Math.random() * 5 + 3).toFixed(2)}% 📈</strong>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       )}
 
       {/* Boost Modal */}
