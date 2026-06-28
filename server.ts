@@ -1,15 +1,20 @@
 import express from "express";
 import path from "path";
+import { readFileSync } from "fs";
+import { fileURLToPath } from "url";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
 import { initializeApp as initializeFirebaseApp } from "firebase/app";
 import { getFirestore, collection, doc, getDocs, getDoc, setDoc, deleteDoc } from "firebase/firestore";
-import { createRequire } from "module";
 
 dotenv.config();
 
-const require = createRequire(import.meta.url);
-const firebaseConfig = require("./firebase-applet-config.json");
+// Resolve the firebase config relative to this file (works in both dev and Vercel serverless)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const firebaseConfig = JSON.parse(
+  readFileSync(path.resolve(__dirname, "firebase-applet-config.json"), "utf-8")
+);
 const firebaseApp = initializeFirebaseApp(firebaseConfig);
 const db = getFirestore(firebaseApp, firebaseConfig.firestoreDatabaseId);
 

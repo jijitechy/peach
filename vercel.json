@@ -3,11 +3,18 @@
   "builds": [
     {
       "src": "api/index.ts",
-      "use": "@vercel/node"
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": ["firebase-applet-config.json"]
+      }
     },
     {
       "src": "package.json",
-      "use": "@vercel/static-build"
+      "use": "@vercel/static-build",
+      "config": {
+        "buildCommand": "vite build",
+        "outputDirectory": "dist"
+      }
     }
   ],
   "rewrites": [
