@@ -46,7 +46,7 @@ if (isGeminiAvailable) {
   });
 }
 
-const app = express();
+export const app = express();
 const PORT = 3000;
 
 app.use(express.json());
@@ -1490,5 +1490,6 @@ async function startServer() {
     console.log(`Peach Fullstack Server listening at http://0.0.0.0:${PORT}`);
   });
 }
-
-startServer();
+if (!process.env.VERCEL) {
+  startServer();
+}

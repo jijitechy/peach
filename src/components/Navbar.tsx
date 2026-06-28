@@ -49,11 +49,11 @@ export default function Navbar({
             }}
             className="flex items-center gap-2.5 cursor-pointer group"
           >
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#f97316] to-[#ea580c] flex items-center justify-center shadow-md shadow-orange-500/30 group-hover:scale-105 transition-transform ring-2 ring-orange-200 overflow-hidden">
+            <div className="w-10 h-10 rounded-full shadow-md shadow-orange-500/30 group-hover:scale-105 transition-transform ring-2 ring-orange-200 overflow-hidden">
               <img 
                 src="/peachlogo.png" 
                 alt="Peach" 
-                className="w-7 h-7 object-contain" 
+                className="w-full h-full object-cover" 
               />
             </div>
             <div>
