@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { Listing, Bid, ValuationReport, UserState } from "../types";
 import SimulatedMpesaSTK from "./SimulatedMpesaSTK";
-import { addLocalBid, awardLocalBid, updateLocalEscrow, getLocalListings } from "../utils/dataStore";
+import { getLocalListings } from "../utils/dataStore";
 
 interface ListingDetailProps {
   listingId: string;
@@ -70,16 +70,13 @@ export default function ListingDetail({
       let data: Listing | null = null;
       try {
         const res = await fetch(`/api/listings/${listingId}`);
-        const contentType = res.headers.get("content-type");
-        if (res.ok && contentType && contentType.includes("application/json")) {
+        if (res.ok) {
           data = await res.json();
         } else {
-          throw new Error("Direct endpoint failed");
+          console.error("Failed to fetch listing");
         }
       } catch (err) {
-        console.warn("Express backend offline. Falling back to local listing data.", err);
-        const list = getLocalListings();
-        data = list.find(l => l.id === listingId) || null;
+        console.error("Express backend offline or fetch failed", err);
       }
 
       if (data) {
@@ -193,14 +190,9 @@ export default function ListingDetail({
           return;
         }
       } catch (err) {
-        console.warn("Bypassing to browser local database bid entry.", err);
-        const updated = addLocalBid(listingId, amountNum, currentUser, bidLocation, bidNotes, autoBidLimitNum);
-        if (updated) {
-          success = true;
-          // Deduct client-side simulated wallet
-          const newBalance = currentUser.balance - amountNum;
-          onUpdateUserBalance(newBalance);
-        }
+        console.error("Bid endpoint failed", err);
+        setBidError("Server connection lost. Unable to place bid.");
+        return;
       }
 
       if (success) {
@@ -244,11 +236,9 @@ export default function ListingDetail({
           throw new Error("Direct endpoint failed");
         }
       } catch (err) {
-        console.warn("Bypassing to browser local database award selection.", err);
-        const updated = awardLocalBid(listingId, bidId);
-        if (updated) {
-          success = true;
-        }
+        console.error("Award endpoint failed", err);
+        setAwardErrorMsg("Server connection lost. Unable to select winning bid.");
+        return;
       }
 
       if (success) {
@@ -557,7 +547,14 @@ export default function ListingDetail({
             <div className="flex items-center gap-1 text-xs text-gray-400 font-medium">
               <MapPin className="w-3.5 h-3.5 text-brand-primary" /> {listing.location} (Kenya Region)
             </div>
-            <h1 className="text-xl sm:text-2xl font-display font-bold text-gray-900 mt-1">{listing.title}</h1>
+            <div className="flex items-center gap-3 mt-1 flex-wrap">
+              <h1 className="text-xl sm:text-2xl font-display font-bold text-gray-900">{listing.title}</h1>
+              {listing.isBoosted && (
+                <span className="bg-purple-100 text-purple-700 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 uppercase tracking-wider border border-purple-200">
+                  <Sparkles className="w-3 h-3" /> Boosted 🚀
+                </span>
+              )}
+            </div>
             
             {/* Seller profile section */}
             <div className="mt-4 p-3 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-between">

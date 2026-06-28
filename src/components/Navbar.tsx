@@ -1,9 +1,7 @@
 import { ShieldAlert, Landmark, Smartphone, Monitor, Award, Compass, Sparkles, Plus, AlertCircle, LogOut, LogIn, Coins, ArrowUpRight, Heart, Search, ShoppingCart, User } from "lucide-react";
-import { ViewportMode, UserState } from "../types";
+import { UserState } from "../types";
 
 interface NavbarProps {
-  viewportMode: ViewportMode;
-  setViewportMode: (mode: ViewportMode) => void;
   activeTab: 'marketplace' | 'post' | 'admin' | 'merchant';
   setActiveTab: (tab: 'marketplace' | 'post' | 'admin' | 'merchant') => void;
   currentUser: UserState | null;
@@ -18,8 +16,6 @@ interface NavbarProps {
 }
 
 export default function Navbar({
-  viewportMode,
-  setViewportMode,
   activeTab,
   setActiveTab,
   currentUser,
@@ -83,14 +79,16 @@ export default function Navbar({
             >
               Explore Auctions
             </button>
-            <button
-              onClick={() => setActiveTab('post')}
-              className={`text-xs uppercase tracking-wider font-bold transition-colors flex items-center gap-1 ${
-                activeTab === 'post' ? "text-[#f97316]" : "text-gray-400 hover:text-gray-650"
-              }`}
-            >
-              <Plus className="w-3.5 h-3.5" /> Post Listing
-            </button>
+            {currentUser?.role === 'seller' && (
+              <button
+                onClick={() => setActiveTab('post')}
+                className={`text-xs uppercase tracking-wider font-bold transition-colors flex items-center gap-1 ${
+                  activeTab === 'post' ? "text-[#f97316]" : "text-gray-400 hover:text-gray-650"
+                }`}
+              >
+                <Plus className="w-3.5 h-3.5" /> Post Listing
+              </button>
+            )}
             {currentUser?.role === 'seller' && (
               <button
                 onClick={() => setActiveTab('merchant')}
@@ -214,31 +212,7 @@ export default function Navbar({
             </button>
           )}
 
-          {/* Viewport setting layout controls */}
-          <div className="bg-gray-100 p-0.5 rounded-xl flex border border-gray-200 hidden sm:flex select-none">
-            <button
-              onClick={() => setViewportMode('web')}
-              className={`p-1.5 text-xs rounded-lg flex items-center gap-1 font-bold transition-all cursor-pointer ${
-                viewportMode === 'web'
-                  ? "bg-white text-gray-900 shadow-2xs"
-                  : "text-gray-400 hover:text-gray-650"
-              }`}
-              title="Switch to Web / Laptop View"
-            >
-              <Monitor className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={() => setViewportMode('mobile')}
-              className={`p-1.5 text-xs rounded-lg flex items-center gap-1 font-bold transition-all cursor-pointer ${
-                viewportMode === 'mobile'
-                  ? "bg-white text-gray-950 shadow-2xs"
-                  : "text-gray-400 hover:text-gray-650"
-              }`}
-              title="Switch to Mobile / Phone View"
-            >
-              <Smartphone className="w-3.5 h-3.5" />
-            </button>
-          </div>
+          {/* Viewport setting layout controls removed */}
 
         </div>
 

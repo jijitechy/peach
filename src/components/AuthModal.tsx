@@ -31,69 +31,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
     setPhone(clean);
   };
 
-  const currentDummyAccounts = [
-    { email: 'joji@gmail.com', name: 'Joji Techy', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&q=80', description: 'Buyer Account (KES 250,000 Wallet)' },
-    { email: 'demo@gmail.com', name: 'Mock Investor', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80', description: 'Bidder Account (KES 29,500 Wallet)' },
-    { email: 'jane@gmail.com', name: 'Jane Mwangi', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80', description: 'Seller Account (KES 95,000 Wallet)' },
-    { email: 'wycliffe@gmail.com', name: 'Wycliffe', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=150&q=80', description: 'Buyer Account (KES 154,000 Wallet)' },
-  ];
 
-  const handleQuickLogin = async (email: string) => {
-    setErrorMsg(null);
-    setSuccessMsg(null);
-    setIsSubmitting(true);
-
-    try {
-      let loggedUser: UserState | null = null;
-      try {
-        const response = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: email, password: 'tiktak1' })
-        });
-        const contentType = response.headers.get('content-type');
-        if (response.ok && contentType && contentType.includes('application/json')) {
-          const data = await response.json();
-          loggedUser = data.user;
-        } else {
-          throw new Error('Express endpoint returned HTML index/non-JSON');
-        }
-      } catch (innerErr) {
-        console.warn('Backend endpoint unavailable. Bypassing with secure browser-side profile compilation.', innerErr);
-        const list = [
-          { id: 'usr-01', username: 'joji@gmail.com', name: 'Joji Techy', phone: '0711223344', role: 'buyer', balance: 250000, avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&q=80' },
-          { id: 'usr-02', username: 'demo@gmail.com', name: 'Mock Investor', phone: '0722334455', role: 'bidder', balance: 29500, avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80' },
-          { id: 'usr-03', username: 'jane@gmail.com', name: 'Jane Mwangi', phone: '0733445566', role: 'seller', balance: 95000, avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80' },
-          { id: 'usr-04', username: 'wycliffe@gmail.com', name: 'Wycliffe', phone: '0744556677', role: 'buyer', balance: 154000, avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=150&q=80' },
-          { id: 'usr-admin', username: 'admin@gmail.com', name: 'Peach Administrator', phone: '0700000000', role: 'admin', balance: 5000000, avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=150&q=80' }
-        ];
-        const match = list.find(u => u.username.toLowerCase() === email.toLowerCase());
-        if (match) {
-          loggedUser = match as UserState;
-        }
-      }
-
-      if (loggedUser) {
-        setSuccessMsg(`Welcome instantly, ${loggedUser.name}!`);
-        const target = loggedUser;
-        setTimeout(() => {
-          onAuthSuccess(target);
-          onClose();
-          setUsername('');
-          setPassword('');
-          setErrorMsg(null);
-          setSuccessMsg(null);
-        }, 900);
-      } else {
-        throw new Error('Fallback target profile lookup error');
-      }
-
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Connection breakdown occurred.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -153,68 +91,8 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
           throw new Error('Express endpoint offline/non-JSON');
         }
       } catch (innerErr) {
-        console.warn('Running direct browser-local memory user check.', innerErr);
-        const fallbackUsersKey = "peach_simulated_users";
-        if (!localStorage.getItem(fallbackUsersKey)) {
-          const list = [
-            { id: 'usr-01', username: 'joji@gmail.com', name: 'Joji Techy', phone: '0711223344', role: 'buyer', balance: 250000, avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&q=80' },
-            { id: 'usr-02', username: 'demo@gmail.com', name: 'Mock Investor', phone: '0722334455', role: 'buyer', balance: 29500, avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80' },
-            { id: 'usr-03', username: 'jane@gmail.com', name: 'Jane Mwangi', phone: '0733445566', role: 'seller', balance: 95000, avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80' },
-            { id: 'usr-04', username: 'wycliffe@gmail.com', name: 'Wycliffe', phone: '0744556677', role: 'buyer', balance: 154000, avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=150&q=80' },
-            { id: 'usr-admin', username: 'admin@gmail.com', name: 'Peach Administrator', phone: '0700000000', role: 'admin', balance: 5000000, avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=150&q=80' }
-          ];
-          localStorage.setItem(fallbackUsersKey, JSON.stringify(list));
-        }
-
-        const usersList = JSON.parse(localStorage.getItem(fallbackUsersKey) || '[]');
-        
-        if (isLogin) {
-          // Special admin rule
-          if (username.toLowerCase() === 'admin@gmail.com') {
-            loggedUser = usersList.find((u: any) => u.username.toLowerCase() === 'admin@gmail.com') || {
-              id: 'usr-admin', username: 'admin@gmail.com', name: 'Peach Administrator', phone: '0700000000', role: 'admin', balance: 5000000, avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=150&q=80'
-            };
-          } else {
-            const found = usersList.find((u: any) => u.username.toLowerCase() === username.toLowerCase());
-            if (found) {
-              loggedUser = found;
-            } else {
-              // Create auto-guest profile seamlessly to never block users
-              loggedUser = {
-                id: 'usr-' + Math.random().toString(36).substr(2, 9),
-                username: username.toLowerCase(),
-                name: username.split('@')[0],
-                phone: '0712345678',
-                role: 'buyer',
-                balance: 75000,
-                avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80'
-              };
-              usersList.push(loggedUser);
-              localStorage.setItem(fallbackUsersKey, JSON.stringify(usersList));
-            }
-          }
-        } else {
-          const exists = usersList.find((u: any) => u.username.toLowerCase() === username.toLowerCase());
-          if (exists) {
-            setErrorMsg('This username or email is already registered.');
-            setIsSubmitting(false);
-            return;
-          }
-          loggedUser = {
-            id: 'usr-' + Math.random().toString(36).substr(2, 9),
-            username: username.toLowerCase(),
-            name: name,
-            phone: phone,
-            role: role,
-            balance: role === 'seller' ? 25000 : 75000,
-            avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
-            shopName: role === 'seller' ? shopName : undefined,
-            nationalId: role === 'seller' ? nationalId : undefined,
-            kraPin: role === 'seller' ? kraPin : undefined
-          };
-          usersList.push(loggedUser);
-          localStorage.setItem(fallbackUsersKey, JSON.stringify(usersList));
-        }
+        console.error('Server offline or request failed.', innerErr);
+        throw new Error("Cannot connect to server. Ensure the backend is running.");
       }
 
       if (loggedUser) {
@@ -321,21 +199,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
             </div>
           )}
 
-          {/* Quick Sandbox Hint */}
-          {isLogin && (
-            <div className="bg-orange-50/50 p-3 rounded-2xl border border-orange-100 text-[11px] text-orange-850">
-              <span className="font-bold flex items-center gap-1 mb-1">
-                <Sparkles className="w-3.5 h-3.5 text-orange-600" /> Sandbox Credentials Tip
-              </span>
-              <p className="leading-normal">
-                You can register your own personal working profile, or use the pre-seeded admin profile:
-              </p>
-              <div className="mt-1.5 font-mono text-[9.5px] bg-white/80 p-2 rounded-lg border border-orange-100 flex justify-between items-center">
-                <span>Email: <strong className="text-gray-800">admin@gmail.com</strong></span>
-                <span>Pass: <strong className="text-gray-800">tiktak1</strong></span>
-              </div>
-            </div>
-          )}
+
 
           <form onSubmit={handleSubmit} className="space-y-3.5 text-xs">
             

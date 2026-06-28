@@ -4,7 +4,7 @@ import {
   Plus, Search, Sparkles, Check, MapPin, 
   Activity, Award, ShieldCheck, Tag, Loader2, Info, ArrowUpRight, Smartphone, Coins, Landmark, X, Heart
 } from "lucide-react";
-import { Listing, ViewportMode, UserState } from "./types";
+import { Listing, UserState } from "./types";
 import Navbar from "./components/Navbar";
 import ListingCard from "./components/ListingCard";
 import ListingDetail from "./components/ListingDetail";
@@ -17,8 +17,6 @@ import MerchantHub from "./components/MerchantHub";
 import { getLocalListings, createLocalListing } from "./utils/dataStore";
 
 export default function App() {
-  const [viewportMode, setViewportMode] = useState<ViewportMode>("web");
-
   // User Session Management Hooks
   const [currentUser, setCurrentUser] = useState<UserState | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
@@ -225,23 +223,17 @@ export default function App() {
   const fetchListings = async () => {
     try {
       setIsLoading(true);
-      let loadedListings: Listing[] = [];
-      try {
-        const response = await fetch("/api/listings");
-        const contentType = response.headers.get("content-type");
-        if (response.ok && contentType && contentType.includes("application/json")) {
-          const data = await response.json();
-          loadedListings = data;
-        } else {
-          throw new Error("Express endpoint returned non-JSON/offline fallback");
-        }
-      } catch (err) {
-        console.warn("Backend offline or static mode. Restoring persistent listings from browser client database.", err);
-        loadedListings = getLocalListings();
+      const response = await fetch("/api/listings");
+      if (response.ok) {
+        const data = await response.json();
+        setListings(data);
+      } else {
+        console.error("Failed to fetch listings from server.");
+        setListings([]);
       }
-      setListings(loadedListings);
     } catch (error) {
       console.error("Error connecting to listings interface:", error);
+      setListings([]);
     } finally {
       setIsLoading(false);
     }
@@ -356,83 +348,33 @@ export default function App() {
     }
 
     try {
-      let publishSuccess = false;
-      try {
-        const response = await fetch("/api/listings", {
-          method: "POST",
-          headers: { 
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${currentUser.id}`
-          },
-          body: JSON.stringify({
-            title: formTitle,
-            description: formDescription,
-            category: formCategory,
-            condition: formCondition,
-            location: formLocation,
-            startingBid: parseFloat(formStartingBid),
-            reservePrice: formReservePrice ? parseFloat(formReservePrice) : undefined,
-            durationHours: parseFloat(formDurationHours),
-            imageUrl: formImageUrl || undefined,
-            videoUrl: formVideoUrl || undefined,
-            brand: formBrand,
-            specs: formSpecs,
-            size: formSize,
-            warranty: formWarranty,
-            minIncrement: parseFloat(formMinIncrement) || 500,
-            allowBidding: formAllowBidding
-          })
-        });
-        if (response.ok) {
-          publishSuccess = true;
-        } else {
-          throw new Error("Direct endpoint failed");
-        }
-      } catch (err) {
-        console.warn("Express peer endpoint unavailable. Writing new listing to secure client-side browser catalog.", err);
-        const newListing: Listing = {
-          id: "lst-" + Math.random().toString(36).substr(2, 9),
+      const response = await fetch("/api/listings", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${currentUser.id}`
+        },
+        body: JSON.stringify({
           title: formTitle,
           description: formDescription,
           category: formCategory,
           condition: formCondition,
           location: formLocation,
-          seller: {
-            id: currentUser.id,
-            name: currentUser.shopName || currentUser.name,
-            rating: 4.8,
-            avatar: currentUser.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80"
-          },
           startingBid: parseFloat(formStartingBid),
-          reservePrice: formReservePrice ? parseFloat(formReservePrice) : parseFloat(formStartingBid) * 1.1,
-          currentBid: parseFloat(formStartingBid),
-          bidsCount: 0,
-          endTime: new Date(Date.now() + parseFloat(formDurationHours) * 60 * 60 * 1000).toISOString(),
-          status: "active",
-          winnerId: null,
-          winnerName: null,
-          escrowStatus: "none",
-          deliveryOption: null,
-          deliveryFee: 0,
-          deliveryAddress: null,
-          mpesaPhone: null,
-          mpesaReceipt: null,
-          trackingCode: null,
-          imageUrl: formImageUrl || "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=600&q=80",
-          videoUrl: formVideoUrl || "",
-          bidHistory: [],
+          reservePrice: formReservePrice ? parseFloat(formReservePrice) : undefined,
+          durationHours: parseFloat(formDurationHours),
+          imageUrl: formImageUrl || undefined,
+          videoUrl: formVideoUrl || undefined,
           brand: formBrand,
           specs: formSpecs,
           size: formSize,
           warranty: formWarranty,
           minIncrement: parseFloat(formMinIncrement) || 500,
           allowBidding: formAllowBidding
-        };
-        createLocalListing(newListing);
-        publishSuccess = true;
-      }
+        })
+      });
 
-      if (publishSuccess) {
+      if (response.ok) {
         // Reset state & load marketplace listings back
         setFormTitle("");
         setFormDescription("");
@@ -473,7 +415,7 @@ export default function App() {
   });
 
   // Master Render of content logic that applies to both desktop dashboard layout & mobile view
-  const renderCoreContent = (isMobileBezel: boolean = false) => {
+  const renderCoreContent = () => {
     if (selectedListingId) {
       return (
         <motion.div
@@ -525,6 +467,13 @@ export default function App() {
         );
 
       case "post":
+        if (currentUser?.role !== "seller") {
+          return (
+            <div className="p-8 text-center text-gray-500 font-bold">
+              Only registered sellers can post listings.
+            </div>
+          );
+        }
         return (
           <motion.div 
             initial={{ opacity: 0 }} 
@@ -1002,7 +951,7 @@ export default function App() {
             )}
 
             {/* Simulated Live Statistics board highlighting trading activity */}
-            {!isMobileBezel && (
+            {true && (
               <div className="bg-linear-to-b from-gray-900 to-indigo-950 p-6 rounded-3xl text-white md:flex md:items-center md:justify-between gap-6 shadow-xl border border-gray-800">
                 <div className="max-w-md">
                   <span className="inline-block bg-emerald-500/10 text-emerald-300 border border-emerald-500/25 text-[10px] tracking-wider uppercase font-bold py-0.5 px-2.5 rounded-full mb-1">
@@ -1041,12 +990,6 @@ export default function App() {
       
       {/* Top Application Global Navbar */}
       <Navbar
-        viewportMode={viewportMode}
-        setViewportMode={(mode) => {
-          setViewportMode(mode);
-          // Auto reset to listings list upon layout shift for visual ease
-          setSelectedListingId(null);
-        }}
         activeTab={activeTab}
         setActiveTab={(tab) => {
           setActiveTab(tab);
@@ -1075,100 +1018,12 @@ export default function App() {
 
       <ActivityTicker />
 
-      {/* Main Container Switcher mapping to Web Platform vs Screen Boxed iPhone */}
       <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 flex-1">
-        
-        {viewportMode === "web" ? (
-          // Web Desktop mode: Standard gorgeous full page responsive design
-          <div className="space-y-6">
-            <AnimatePresence mode="wait">
-              {renderCoreContent()}
-            </AnimatePresence>
-          </div>
-        ) : (
-          // Mobile native mode: Render boxed inside high fidelity iPhone-like frame bezel
-          <div className="flex flex-col items-center justify-center py-2 bg-radial from-gray-100 to-gray-200 rounded-3xl border border-gray-200/50 p-4 shadow-inner">
-            <div className="text-center max-w-sm mb-4">
-              <span className="text-[11px] font-bold text-brand-primary uppercase tracking-wider">Dual Screen Presentation Mock</span>
-              <h2 className="text-sm font-semibold text-gray-600 mt-0.5">Peach iOS/Android Live Bezels</h2>
-              <p className="text-[10px] text-gray-400 leading-tight">Interact with the real-time mobile checkout environment and STK push simulators below.</p>
-            </div>
-
-            {/* Physical iPhone device mock design */}
-            <div className="relative mx-auto border-gray-900 bg-gray-950 border-[12px] sm:border-[16px] rounded-[3.5rem] h-[780px] w-[360px] shadow-2xl overflow-hidden flex flex-col">
-              
-              {/* iPhone Notch display sensor bar */}
-              <div className="absolute top-0 inset-x-0 h-8 bg-black z-50 flex items-center justify-between px-6 text-[10px] text-white">
-                <span className="font-semibold text-gray-200">10:36</span>
-                {/* Simulated Notch */}
-                <div className="w-24 h-4 bg-black rounded-b-xl absolute left-1/2 -translate-x-1/2 top-0 flex items-center justify-center">
-                  <div className="w-1.5 h-1.5 bg-gray-800 rounded-full mr-2"></div>
-                  <div className="w-8 h-1 bg-gray-900 rounded-full"></div>
-                </div>
-                <div className="flex items-center gap-1 font-mono text-gray-300">
-                  <span>5G</span>
-                  <div className="flex gap-0.5 items-end h-2.5">
-                    <span className="w-0.5 h-1 bg-white rounded-xs"></span>
-                    <span className="w-0.5 h-1.5 bg-white rounded-xs"></span>
-                    <span className="w-0.5 h-2 bg-white rounded-xs"></span>
-                    <span className="w-0.5 h-2.5 bg-white rounded-xs"></span>
-                  </div>
-                  <div className="w-4.5 h-2.5 border border-white/65 rounded-xs p-0.5 flex items-center">
-                    <div className="h-full w-3/4 bg-[#44B92C] rounded-2xs"></div>
-                  </div>
-                </div>
-              </div>
-
-              {/* iPhone App Screen Body scroll frame */}
-              <div className="flex-1 overflow-y-auto bg-gray-50 pt-8 pb-4 scrollbar-none">
-                
-                {/* Mobile top mini-header */}
-                <div className="px-4 py-2 bg-white border-b border-gray-100 flex items-center justify-between sticky top-0 z-10 shrink-0 select-none">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-6 h-6 rounded bg-brand-primary flex items-center justify-center text-white font-extrabold text-xs">P</div>
-                    <span className="text-xs font-display font-extrabold text-brand-primary">Peach Mobile</span>
-                  </div>
-                  <div className="flex gap-1.5">
-                    <button 
-                      onClick={() => { setActiveTab("marketplace"); setSelectedListingId(null); }}
-                      className={`text-[9px] font-bold px-2 py-1 rounded transition-colors ${activeTab === "marketplace" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-500"}`}
-                    >
-                      Shop
-                    </button>
-                    <button 
-                      onClick={() => { setActiveTab("post"); setSelectedListingId(null); }}
-                      className={`text-[9px] font-bold px-2 py-1 rounded transition-colors ${activeTab === "post" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-500"}`}
-                    >
-                      Sell
-                    </button>
-                    {currentUser?.role === 'admin' && (
-                      <button 
-                        onClick={() => { setActiveTab("admin"); setSelectedListingId(null); }}
-                        className={`text-[9px] font-bold px-2 py-1 rounded transition-colors ${activeTab === "admin" ? "bg-amber-500 text-white" : "bg-gray-100 text-[#ea580c] font-extrabold border border-amber-200"}`}
-                      >
-                        Admin
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                <div className="px-3 py-3">
-                  <AnimatePresence mode="wait">
-                    {renderCoreContent(true)}
-                  </AnimatePresence>
-                </div>
-
-              </div>
-
-              {/* iOS screen home soft indicator line */}
-              <div className="h-4 bg-black w-full flex items-center justify-center shrink-0 z-50">
-                <div className="w-32 h-1 bg-white rounded-full"></div>
-              </div>
-
-            </div>
-          </div>
-        )}
-
+        <div className="space-y-6">
+          <AnimatePresence mode="wait">
+            {renderCoreContent()}
+          </AnimatePresence>
+        </div>
       </main>
 
       {/* Modern responsive simple footer */}

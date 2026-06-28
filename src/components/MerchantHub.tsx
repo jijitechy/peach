@@ -47,6 +47,9 @@ export default function MerchantHub({ currentUser, onRefreshListings, onPostNewT
   const [boostListingId, setBoostListingId] = useState<string | null>(null);
   const [boostDuration, setBoostDuration] = useState<number>(3); // days
   const boostCostPerDay = 500; // Localized/base cost per day
+  const [boostNetwork, setBoostNetwork] = useState<"facebook" | "tiktok">("facebook");
+  const [boostCaption, setBoostCaption] = useState<string>("");
+  const [isGeneratingCaption, setIsGeneratingCaption] = useState<boolean>(false);
 
 
   useEffect(() => {
@@ -74,13 +77,8 @@ export default function MerchantHub({ currentUser, onRefreshListings, onPostNewT
         throw new Error('Express API failed');
       }
     } catch (err) {
-      console.warn("Using local database backup to fetch seller catalog products.", err);
-      // Fallback
-      const local = getLocalListings();
-      if (currentUser) {
-        const sellerItems = local.filter(l => l.seller && l.seller.id === currentUser.id);
-        setListings(sellerItems);
-      }
+      console.error("Express API failed to fetch seller catalog products.", err);
+      showToast("Error fetching listings from server.");
     } finally {
       setLoading(false);
     }
@@ -121,21 +119,8 @@ export default function MerchantHub({ currentUser, onRefreshListings, onPostNewT
         throw new Error("Endpoint failed");
       }
     } catch (err) {
-      // Client-side local persistence backup
-      console.warn("Express server unavailable. Marking shipped locally.", err);
-      const all = getLocalListings();
-      const idx = all.findIndex(l => l.id === listingId);
-      if (idx !== -1) {
-        all[idx] = {
-          ...all[idx],
-          escrowStatus: 'shipped',
-          trackingCode: inputCode
-        };
-        saveLocalListings(all);
-        showToast("Shipped! Local peer-to-peer tracking details saved.");
-        fetchMerchantData();
-        onRefreshListings();
-      }
+      console.error("Express server unavailable. Failed to mark shipped.", err);
+      showToast("Error: Could not mark as shipped.");
     } finally {
       setSubmittingActionId(null);
     }
@@ -159,40 +144,68 @@ export default function MerchantHub({ currentUser, onRefreshListings, onPostNewT
         throw new Error("Direct delete failed");
       }
     } catch (err) {
-      console.warn("Performing fallback clean stock update.", err);
-      const all = getLocalListings();
-      const idx = all.findIndex(l => l.id === listingId);
-      if (idx !== -1) {
-        all[idx] = {
-          ...all[idx],
-          status: statusType
-        };
-        saveLocalListings(all);
-        showToast(`Stock updated: Item marked as ${statusType}`);
-        fetchMerchantData();
-        onRefreshListings();
-      }
+      console.error("Express server unavailable. Failed to delete listing.", err);
+      showToast("Error: Could not update stock status.");
     } finally {
       setSubmittingActionId(null);
     }
   };
 
+  const handleGenerateAdCaption = async () => {
+    if (!boostListingId) return;
+    const l = listings.find(lst => lst.id === boostListingId);
+    if (!l) return;
+
+    setIsGeneratingCaption(true);
+    setBoostCaption("");
+    try {
+      const response = await fetch('/api/gemini/generate-social-caption', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: l.title,
+          category: l.category,
+          condition: l.condition,
+          location: l.location,
+          price: l.currentBid || l.startingBid,
+          allowBidding: l.status === 'active',
+          deepLink: `https://peach.co.ke/listings/${l.id}`,
+          network: boostNetwork
+        })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setBoostCaption(data.caption || "");
+      } else {
+        alert("Failed to generate caption.");
+      }
+    } catch (err) {
+      alert("Network error generating caption.");
+    } finally {
+      setIsGeneratingCaption(false);
+    }
+  };
+
   const handleBoostListing = async () => {
     if (!boostListingId) return;
+    if (!boostCaption.trim()) {
+      alert("Please generate a caption/video script first before boosting.");
+      return;
+    }
     setSubmittingActionId('boost');
     const cost = boostDuration * boostCostPerDay;
     try {
       const response = await fetch(`/api/listings/${boostListingId}/boost`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: cost, durationDays: boostDuration })
+        body: JSON.stringify({ amount: cost, durationDays: boostDuration, caption: boostCaption, network: boostNetwork })
       });
       if (!response.ok) {
         const errorData = await response.json();
         alert(errorData.error || "Boost failed.");
         return;
       }
-      showToast(`Campaign Live! Boosted for ${boostDuration} days.`);
+      showToast(`Campaign Live! Boosted for ${boostDuration} days on ${boostNetwork === 'facebook' ? 'Meta Ads' : 'TikTok Ads'}.`);
       fetchMerchantData();
       onRefreshListings();
     } catch (err) {
@@ -200,6 +213,7 @@ export default function MerchantHub({ currentUser, onRefreshListings, onPostNewT
     } finally {
       setSubmittingActionId(null);
       setBoostListingId(null);
+      setBoostCaption("");
     }
   };
 
@@ -665,6 +679,39 @@ export default function MerchantHub({ currentUser, onRefreshListings, onPostNewT
             
             <div className="space-y-4">
               <div>
+                <label className="text-[10px] uppercase font-bold text-gray-500 block mb-1.5">Select Network</label>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => { setBoostNetwork('facebook'); setBoostCaption(''); }}
+                    className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${boostNetwork === 'facebook' ? 'bg-[#1877F2] text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+                  >
+                    Meta Ads (FB/IG)
+                  </button>
+                  <button 
+                    onClick={() => { setBoostNetwork('tiktok'); setBoostCaption(''); }}
+                    className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${boostNetwork === 'tiktok' ? 'bg-black text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+                  >
+                    TikTok Ads
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <div className="flex justify-between items-center mb-1.5">
+                  <label className="text-[10px] uppercase font-bold text-gray-500">Ad Creative Script</label>
+                  <button onClick={handleGenerateAdCaption} disabled={isGeneratingCaption} className="text-[9px] text-[#f97316] font-bold hover:underline">
+                    {isGeneratingCaption ? "Generating..." : "⚡ Auto-Generate AI Script"}
+                  </button>
+                </div>
+                <textarea 
+                  value={boostCaption}
+                  onChange={e => setBoostCaption(e.target.value)}
+                  placeholder={boostNetwork === 'facebook' ? "Facebook caption..." : "TikTok video script..."}
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-[11px] outline-hidden focus:border-orange-400 min-h-[80px]"
+                />
+              </div>
+
+              <div>
                 <label className="text-[10px] uppercase font-bold text-gray-500 block mb-1.5">Select Duration</label>
                 <select 
                   value={boostDuration}
@@ -683,12 +730,12 @@ export default function MerchantHub({ currentUser, onRefreshListings, onPostNewT
               </div>
               
               <div className="text-[9px] text-gray-400 leading-normal text-center px-2">
-                This amount will be deducted from your merchant wallet. We'll automatically build and publish a Meta Ads campaign for your item.
+                This amount will be deducted from your merchant wallet. We'll automatically build and publish a {boostNetwork === 'facebook' ? 'Meta' : 'TikTok'} Ads campaign using your generated creative.
               </div>
               
               <div className="flex gap-2 pt-2">
                 <button 
-                  onClick={() => setBoostListingId(null)}
+                  onClick={() => { setBoostListingId(null); setBoostCaption(""); }}
                   className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold py-2.5 rounded-xl transition-colors cursor-pointer"
                 >
                   Cancel
