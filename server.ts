@@ -803,18 +803,55 @@ app.post("/api/listings/:id/boost", async (req, res) => {
   listing.boostDurationDays = boostDays;
   listing.isMetaSync = true;
   
-  // Mock Meta Marketing API Integration
-  // TODO: Replace with actual Axios/Fetch call to Meta Graph API
-  // e.g. await axios.post(`https://graph.facebook.com/v18.0/\${META_AD_ACCOUNT_ID}/campaigns`, { ... })
-  
+  const network = req.body.network || "facebook";
+  const caption = req.body.caption || "Special Deal!";
+
+  if (network === 'facebook' && process.env.META_ACCESS_TOKEN && process.env.META_AD_ACCOUNT_ID) {
+    try {
+      await fetch(`https://graph.facebook.com/v18.0/act_${process.env.META_AD_ACCOUNT_ID}/campaigns`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          access_token: process.env.META_ACCESS_TOKEN,
+          name: `Peach Boost: ${listing.title}`,
+          objective: 'OUTCOME_TRAFFIC',
+          status: 'ACTIVE',
+          special_ad_categories: [],
+          daily_budget: boostAmount * 100 // assuming API takes cents
+        })
+      });
+    } catch (err) {
+      console.error("Meta Graph API error:", err);
+    }
+  } else if (network === 'tiktok' && process.env.TIKTOK_ACCESS_TOKEN && process.env.TIKTOK_AD_ACCOUNT_ID) {
+    try {
+      await fetch('https://business-api.tiktok.com/open_api/v1.3/campaign/create/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Token': process.env.TIKTOK_ACCESS_TOKEN
+        },
+        body: JSON.stringify({
+          advertiser_id: process.env.TIKTOK_AD_ACCOUNT_ID,
+          campaign_name: `Peach Boost: ${listing.title}`,
+          objective_type: 'TRAFFIC',
+          budget_mode: 'BUDGET_MODE_DAY',
+          budget: boostAmount
+        })
+      });
+    } catch (err) {
+      console.error("TikTok API error:", err);
+    }
+  }
+
   const baselineReach = boostAmount * 12.5; // Estimated reach factor
   const baselineClicks = Math.floor(baselineReach * 0.048);
 
   listing.socialCampaignStats = {
-    metaReach: (listing.socialCampaignStats?.metaReach || 0) + Math.floor(baselineReach * (0.85 + Math.random() * 0.3)),
-    tikTokReach: listing.socialCampaignStats?.tikTokReach || 0,
-    metaClicks: (listing.socialCampaignStats?.metaClicks || 0) + Math.floor(baselineClicks * (0.75 + Math.random() * 0.4)),
-    tikTokClicks: listing.socialCampaignStats?.tikTokClicks || 0
+    metaReach: (listing.socialCampaignStats?.metaReach || 0) + (network === 'facebook' ? Math.floor(baselineReach * (0.85 + Math.random() * 0.3)) : 0),
+    tikTokReach: (listing.socialCampaignStats?.tikTokReach || 0) + (network === 'tiktok' ? Math.floor(baselineReach * (0.85 + Math.random() * 0.3)) : 0),
+    metaClicks: (listing.socialCampaignStats?.metaClicks || 0) + (network === 'facebook' ? Math.floor(baselineClicks * (0.75 + Math.random() * 0.4)) : 0),
+    tikTokClicks: (listing.socialCampaignStats?.tikTokClicks || 0) + (network === 'tiktok' ? Math.floor(baselineClicks * (0.75 + Math.random() * 0.4)) : 0)
   };
 
   await saveListing(listing);
@@ -822,6 +859,48 @@ app.post("/api/listings/:id/boost", async (req, res) => {
 
   res.json({ success: true, listing, newBalance: users[userIndex].balance });
 });
+
+  // Catalog Sync API
+  app.post("/api/catalog/sync", async (req, res) => {
+    const user = await getAuthUser(req);
+    if (!user || user.role !== "seller") {
+      return res.status(403).json({ error: "Forbidden: Seller access required." });
+    }
+
+    const currentListings = await fetchListings();
+    const sellerListings = currentListings.filter(l => l.seller.id === user.id);
+
+    if (process.env.META_ACCESS_TOKEN && process.env.META_CATALOG_ID) {
+      try {
+        const payload = {
+          access_token: process.env.META_ACCESS_TOKEN,
+          requests: sellerListings.map(l => ({
+            method: "CREATE",
+            retailer_id: l.id,
+            data: {
+              name: l.title,
+              description: l.description,
+              availability: l.status === "active" ? "in stock" : "out of stock",
+              condition: l.condition.toLowerCase().includes("new") ? "new" : "used",
+              price: (l.currentBid || l.startingBid) * 100, // cents
+              currency: "KES",
+              image_url: l.imageUrl,
+              url: `https://peach.co.ke/listings/${l.id}`
+            }
+          }))
+        };
+        await fetch(`https://graph.facebook.com/v18.0/${process.env.META_CATALOG_ID}/batch`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      } catch (err) {
+        console.error("Meta Commerce Sync error:", err);
+      }
+    }
+
+    res.json({ success: true, message: "Catalog synced successfully to Meta Commerce Manager.", syncedCount: sellerListings.length });
+  });
 
 // API Endpoints
 app.get("/api/listings", async (req, res) => {

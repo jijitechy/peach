@@ -219,13 +219,28 @@ export default function MerchantHub({ currentUser, onRefreshListings, onPostNewT
     }
   };
 
-  const handleSyncCatalog = () => {
+  const handleSyncCatalog = async () => {
     setSyncingCatalog(true);
-    setTimeout(() => {
-      setCatalogSynced(true);
+    try {
+      const response = await fetch('/api/catalog/sync', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentUser?.id || 'usr-admin'}`
+        }
+      });
+      if (response.ok) {
+        setCatalogSynced(true);
+        showToast("Digital Storefront Product Catalog successfully synced to Meta Commerce Manager!");
+      } else {
+        throw new Error('Sync failed');
+      }
+    } catch (err) {
+      console.error("Failed to sync catalog", err);
+      showToast("Error syncing catalog. Please try again.");
+    } finally {
       setSyncingCatalog(false);
-      showToast("Digital Storefront Product Catalog successfully synced to Meta Commerce Manager!");
-    }, 2000);
+    }
   };
 
   if (!currentUser || currentUser.role !== 'seller') {
