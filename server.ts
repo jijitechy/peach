@@ -1,22 +1,36 @@
 import express from "express";
 import path from "path";
-import { readFileSync } from "fs";
-import { fileURLToPath } from "url";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
-import { initializeApp as initializeFirebaseApp } from "firebase/app";
-import { getFirestore, collection, doc, getDocs, getDoc, setDoc, deleteDoc } from "firebase/firestore";
+import { initializeApp as initializeFirebaseApp, getApps } from "firebase/app";
+import { getFirestore, collection, doc, getDocs, setDoc, deleteDoc } from "firebase/firestore";
 
 dotenv.config();
 
-// Resolve the firebase config relative to this file (works in both dev and Vercel serverless)
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const firebaseConfig = JSON.parse(
-  readFileSync(path.resolve(__dirname, "firebase-applet-config.json"), "utf-8")
-);
-const firebaseApp = initializeFirebaseApp(firebaseConfig);
-const db = getFirestore(firebaseApp, firebaseConfig.firestoreDatabaseId);
+// Firebase config inlined — no runtime file I/O (avoids path issues in Vercel serverless)
+const FIREBASE_CONFIG = {
+  projectId: "windy-doodad-krtgb",
+  appId: "1:397461020275:web:a75c588528ac4fdbb2d406",
+  apiKey: "AIzaSyB-E7JnEQhcrRblF3ykmW3vbgTxvOWfbR0",
+  authDomain: "windy-doodad-krtgb.firebaseapp.com",
+  storageBucket: "windy-doodad-krtgb.firebasestorage.app",
+  messagingSenderId: "397461020275",
+  measurementId: ""
+};
+const FIRESTORE_DATABASE_ID = "ai-studio-12b31046-ff10-4150-a5fc-4f50df876c2f";
+
+// Safely initialize Firebase — reuse existing app in warm serverless containers
+let db: ReturnType<typeof getFirestore>;
+try {
+  const firebaseApp = getApps().length === 0
+    ? initializeFirebaseApp(FIREBASE_CONFIG)
+    : getApps()[0];
+  db = getFirestore(firebaseApp, FIRESTORE_DATABASE_ID);
+} catch (err) {
+  console.error("Firebase init failed, falling back to in-memory seed data:", err);
+  // db remains undefined — all Firestore helpers will catch and fall back to seeds
+  db = null as any;
+}
 
 // Helper to protect against Firestore SDK hanging when offline or unprovisioned
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number = 1500): Promise<T> {
@@ -444,8 +458,8 @@ async function getAuthUser(req: express.Request) {
   return null;
 }
 
-// Trigger checker periodically and on API calls
-setInterval(checkAndAwardAuctions, 15000);
+// Note: setInterval removed — Vercel serverless functions are stateless.
+// Auction checks run per-request on /api/listings calls instead.
 
 // Helper: Check and auto-award expired auctions of active status
 async function checkAndAwardAuctions() {
