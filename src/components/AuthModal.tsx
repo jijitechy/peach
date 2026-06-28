@@ -153,16 +153,15 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
           </button>
           
           <div className="flex justify-center mb-2">
-            <img src="/peachlogo.png" alt="Peach Logo" className="w-12 h-12 object-contain drop-shadow-md" />
-          </div>
-          <div className="inline-flex bg-white/10 px-2.5 py-0.5 rounded-full text-[9px] font-mono font-bold tracking-widest uppercase mb-1">
-            Peach Authentication
+            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#f97316] to-[#ea580c] flex items-center justify-center shadow-lg ring-4 ring-white/20">
+              <img src="/peachlogo.png" alt="Peach" className="w-9 h-9 object-contain" />
+            </div>
           </div>
           <h2 className="text-lg font-display font-extrabold tracking-tight">
-            {isLogin ? 'Log into Recommerce Portal' : 'Register Peach Account'}
+            {isLogin ? 'Sign In to Peach' : 'Create Your Peach Account'}
           </h2>
           <p className="text-[11px] text-white/85 mt-1 max-w-xs mx-auto">
-            Secure marketplace bids and real-time M-Pesa simulation vault actions.
+            Kenya's trusted marketplace with M-Pesa Escrow protection.
           </p>
         </div>
 
@@ -279,7 +278,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
                 {role === 'seller' && (
                   <div className="bg-orange-50/30 p-3 rounded-2xl border border-orange-100/60 space-y-3 animate-fadeIn">
                     <span className="font-bold text-[9px] uppercase tracking-wider text-orange-800 flex items-center gap-1">
-                      <ShieldCheck className="w-3.5 h-3.5" /> Jumia & Alibaba Business Validation
+                      <ShieldCheck className="w-3.5 h-3.5" /> Seller Business Verification
                     </span>
 
                     {/* Shop Name */}
@@ -369,15 +368,6 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
               </div>
             </div>
 
-            {/* Promo banner alerting starting balance */}
-            {!isLogin && (
-              <div className="bg-amber-50 border border-amber-200 p-2 rounded-lg text-amber-900 leading-normal text-[9px] flex items-start gap-1 font-semibold">
-                <Info className="w-3 h-3 text-amber-600 shrink-0 mt-0.5" />
-                <span>
-                  <strong>Sandbox Promo:</strong> Buyers/Bidders claim <strong>KES 75,000</strong> immediately.
-                </span>
-              </div>
-            )}
 
             {/* Explicit Cancel & submit buttons */}
             <div className="flex items-center gap-2 pt-1 select-none">
@@ -405,7 +395,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
             <span className="flex items-center gap-1">
               <ShieldCheck className="w-3 h-3 text-emerald-600" /> Safe Escrow Protection
             </span>
-            <span>M-Pesa API Integration Sandbox</span>
+            <span>Peach Marketplace · Kenya</span>
           </div>
 
         </div>

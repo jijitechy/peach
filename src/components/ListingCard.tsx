@@ -168,15 +168,15 @@ export default function ListingCard({ listing, onClick, isFavorited, onToggleFav
       </div>
 
       {/* Description Metrics */}
-      <div className="p-4 flex-1 flex flex-col justify-between">
+      <div className="p-2.5 sm:p-4 flex-1 flex flex-col justify-between">
         <div>
-          <div className="flex items-center gap-1 text-[11px] font-medium text-gray-400">
-            <MapPin className="w-3 h-3 text-brand-primary" /> {listing.location}
+          <div className="flex items-center gap-1 text-[10px] sm:text-[11px] font-medium text-gray-400 truncate">
+            <MapPin className="w-3 h-3 text-brand-primary shrink-0" /> {listing.location}
           </div>
-          <h3 className="font-display font-semibold text-gray-800 mt-1 leading-snug group-hover:text-brand-primary transition-colors text-sm sm:text-base line-clamp-1">
+          <h3 className="font-display font-semibold text-gray-800 mt-1 leading-snug group-hover:text-brand-primary transition-colors text-xs sm:text-sm line-clamp-2">
             {listing.title}
           </h3>
-          <p className="text-gray-500 text-xs mt-1.5 line-clamp-2 leading-relaxed">
+          <p className="text-gray-500 text-[10px] sm:text-xs mt-1 line-clamp-2 leading-relaxed hidden sm:block">
             {listing.description}
           </p>
         </div>

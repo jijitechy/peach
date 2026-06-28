@@ -32,16 +32,11 @@ export default function Navbar({
     <header className="bg-white border-b border-gray-100 sticky top-0 z-40 select-none">
       
       {/* Top micro banner */}
-      <div className="bg-gray-900 text-white px-4 py-2 text-center text-xs md:flex md:items-center md:justify-between md:px-6">
-        <div className="flex items-center justify-center gap-1.5">
-          <span className="inline-block w-2.5 h-2.5 rounded-full bg-[#44B92C] animate-pulse"></span>
-          <span className="font-mono text-gray-300 font-semibold text-[10px] sm:text-xs">
-            PEACH RECOMMERCE PLATFORM ACTIVE (KENYA BASE)
-          </span>
-        </div>
-        <div className="mt-1 md:mt-0 flex items-center justify-center gap-3">
-          <span className="text-[10px] text-gray-400 font-mono font-medium">Daraja M-Pesa Integration Demo sandbox</span>
-        </div>
+      <div className="bg-gray-900 text-white px-4 py-1.5 text-center text-xs flex items-center justify-center gap-2">
+        <span className="inline-block w-2 h-2 rounded-full bg-[#44B92C] animate-pulse"></span>
+        <span className="font-mono text-gray-300 font-semibold text-[10px] sm:text-xs">
+          PEACH MARKETPLACE — KENYA · Secure Escrow · M-Pesa Payments
+        </span>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-auto py-3 md:h-18 flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4">
@@ -52,19 +47,21 @@ export default function Navbar({
             onClick={() => {
               setActiveTab('marketplace');
             }}
-            className="flex items-center gap-2 cursor-pointer group"
+            className="flex items-center gap-2.5 cursor-pointer group"
           >
-            <img 
-              src="/peachlogo.png" 
-              alt="Peach Logo" 
-              className="w-10 h-10 object-contain drop-shadow-md group-hover:scale-105 transition-transform" 
-            />
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#f97316] to-[#ea580c] flex items-center justify-center shadow-md shadow-orange-500/30 group-hover:scale-105 transition-transform ring-2 ring-orange-200 overflow-hidden">
+              <img 
+                src="/peachlogo.png" 
+                alt="Peach" 
+                className="w-7 h-7 object-contain" 
+              />
+            </div>
             <div>
-              <span className="font-display font-extrabold text-[#f97316] tracking-tight text-lg">
+              <span className="font-display font-extrabold text-[#f97316] tracking-tight text-xl leading-none">
                 Peach
               </span>
               <span className="text-gray-400 text-[10px] block leading-none font-mono tracking-wider uppercase font-semibold">
-                Kenya Recommerce
+                Kenya Marketplace
               </span>
             </div>
           </div>

@@ -928,7 +928,7 @@ export default function App() {
             {isLoading ? (
               <div className="flex flex-col items-center justify-center py-20 text-gray-400">
                 <Loader2 className="w-8 h-8 animate-spin text-brand-primary mb-2" />
-                <p className="text-xs font-mono">Connecting to Peach Recommerce engine...</p>
+                <p className="text-xs font-mono">Loading marketplace listings...</p>
               </div>
             ) : filteredListings.length === 0 ? (
               <div className="text-center py-16 bg-white rounded-3xl border border-dashed text-gray-400">
@@ -937,7 +937,7 @@ export default function App() {
                 <p className="text-xs text-gray-400 mt-1">Try another category, search term, or post a new auction yourself!</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5">
                 {filteredListings.map((listing) => (
                   <ListingCard
                     key={listing.id}
@@ -952,24 +952,24 @@ export default function App() {
 
             {/* Simulated Live Statistics board highlighting trading activity */}
             {true && (
-              <div className="bg-linear-to-b from-gray-900 to-indigo-950 p-6 rounded-3xl text-white md:flex md:items-center md:justify-between gap-6 shadow-xl border border-gray-800">
+            <div className="bg-gradient-to-b from-gray-900 to-gray-950 p-6 rounded-3xl text-white md:flex md:items-center md:justify-between gap-6 shadow-xl border border-gray-800">
                 <div className="max-w-md">
                   <span className="inline-block bg-emerald-500/10 text-emerald-300 border border-emerald-500/25 text-[10px] tracking-wider uppercase font-bold py-0.5 px-2.5 rounded-full mb-1">
-                    Vanguard Security System
+                    Peach Escrow Protection
                   </span>
-                  <h3 className="text-xl font-display font-bold">Safest New & Second-Hand Marketplace in Africa</h3>
+                  <h3 className="text-xl font-display font-bold">Kenya's Safest Marketplace</h3>
                   <p className="text-xs text-gray-300 mt-1.5 leading-relaxed font-sans">
-                    With M-Pesa automated STK push triggers, multi-rider logistics confirmation, and instant escrow funds release, fraud is physically impossible. That's why Peach is trusted nationwide.
+                    Every transaction is protected by Peach Escrow — your money is locked until you confirm delivery. M-Pesa payments, fast delivery, zero fraud.
                   </p>
                 </div>
-                <div className="mt-4 md:mt-0 grid grid-cols-2 gap-4 text-center shrink-0">
-                  <div className="bg-white/5 p-3 rounded-xl border border-white/10">
-                    <span className="text-lg font-mono font-bold text-orange-405 block">KES 224K</span>
-                    <span className="text-[9px] text-gray-400 uppercase tracking-widest font-bold">Avg Nairobi Daily Payout</span>
+                <div className="mt-4 md:mt-0 flex flex-col sm:flex-row gap-3 shrink-0">
+                  <div className="bg-white/5 px-4 py-3 rounded-xl border border-white/10 text-center">
+                    <span className="text-lg font-mono font-bold text-[#f97316] block">100%</span>
+                    <span className="text-[9px] text-gray-400 uppercase tracking-widest font-bold">Escrow Protected</span>
                   </div>
-                  <div className="bg-white/5 p-3 rounded-xl border border-white/10">
-                    <span className="text-lg font-mono font-bold text-safaricom-light block">99.4%</span>
-                    <span className="text-[9px] text-gray-400 uppercase tracking-widest font-bold">Merchant Trust Score</span>
+                  <div className="bg-white/5 px-4 py-3 rounded-xl border border-white/10 text-center">
+                    <span className="text-lg font-mono font-bold text-[#44B92C] block">M-Pesa</span>
+                    <span className="text-[9px] text-gray-400 uppercase tracking-widest font-bold">Instant Payments</span>
                   </div>
                 </div>
               </div>
