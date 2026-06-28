@@ -4,11 +4,12 @@ import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
 import { initializeApp as initializeFirebaseApp } from "firebase/app";
 import { getFirestore, collection, doc, getDocs, getDoc, setDoc, deleteDoc } from "firebase/firestore";
-import firebaseConfig from "./firebase-applet-config.json";
+import { createRequire } from "module";
 
 dotenv.config();
 
-// Initialize Firebase App & Firestore
+const require = createRequire(import.meta.url);
+const firebaseConfig = require("./firebase-applet-config.json");
 const firebaseApp = initializeFirebaseApp(firebaseConfig);
 const db = getFirestore(firebaseApp, firebaseConfig.firestoreDatabaseId);
 
