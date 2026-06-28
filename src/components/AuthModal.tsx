@@ -84,15 +84,27 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
         });
 
         const contentType = response.headers.get('content-type');
-        if (response.ok && contentType && contentType.includes('application/json')) {
+        const isJson = contentType && contentType.includes('application/json');
+
+        if (response.ok && isJson) {
           const data = await response.json();
           loggedUser = data.user;
+        } else if (!response.ok && isJson) {
+          // Server is reachable but returned a known error (e.g. duplicate email, wrong password)
+          const errData = await response.json();
+          throw new Error(errData.error || 'Authentication failed.');
+        } else if (!response.ok) {
+          throw new Error(`Server error: ${response.status} ${response.statusText}`);
         } else {
-          throw new Error('Express endpoint offline/non-JSON');
+          throw new Error('Unexpected server response. Please try again.');
         }
-      } catch (innerErr) {
-        console.error('Server offline or request failed.', innerErr);
-        throw new Error("Cannot connect to server. Ensure the backend is running.");
+      } catch (innerErr: any) {
+        // Only wrap as "network down" if it's a fetch/TypeError (true network failure)
+        if (innerErr instanceof TypeError && innerErr.message.includes('fetch')) {
+          throw new Error('Cannot connect to server. Ensure the backend is running.');
+        }
+        // Otherwise re-throw the actual server message
+        throw innerErr;
       }
 
       if (loggedUser) {
