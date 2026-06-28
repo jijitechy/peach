@@ -517,9 +517,9 @@ app.post("/api/auth/signup", async (req, res) => {
     avatar: avatarUrl,
     balance: userType === "seller" ? 0 : 75000, // starting simulation cash for dynamic bidding explore
     role: userType as 'buyer' | 'seller',
-    shopName: userType === "seller" ? shopName : undefined,
-    nationalId: userType === "seller" ? nationalId : undefined,
-    kraPin: userType === "seller" ? kraPin : undefined
+    shopName: userType === "seller" ? shopName : null,
+    nationalId: userType === "seller" ? nationalId : null,
+    kraPin: userType === "seller" ? kraPin : null
   };
 
   await saveUser(newUser);

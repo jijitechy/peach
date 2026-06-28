@@ -153,8 +153,8 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
           </button>
           
           <div className="flex justify-center mb-2">
-            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#f97316] to-[#ea580c] flex items-center justify-center shadow-lg ring-4 ring-white/20">
-              <img src="/peachlogo.png" alt="Peach" className="w-9 h-9 object-contain" />
+            <div className="w-14 h-14 rounded-full overflow-hidden shadow-lg ring-4 ring-white/20">
+              <img src="/peachlogo.png" alt="Peach" className="w-full h-full object-cover" />
             </div>
           </div>
           <h2 className="text-lg font-display font-extrabold tracking-tight">
