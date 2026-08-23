@@ -137,24 +137,43 @@ export default function AIAdStudioView() {
           <h2 className="text-lg font-bold text-gray-900 mb-6">Generated Ad Concepts</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
 
-            {/* Slot 1 — Live AI-generated video */}
+            {/* Slot 1 — Live AI-generated video / UGC */}
             <div className="flex flex-col gap-3">
-              <div className="relative aspect-[9/16] bg-black rounded-2xl overflow-hidden shadow-md border border-gray-100">
+              <div className="relative aspect-[9/16] bg-black rounded-2xl overflow-hidden shadow-md border border-gray-100 group">
                 {operationName ? (
                   <div className="absolute inset-0 w-full h-full [&>div]:h-full [&>div]:rounded-none [&>div]:border-none">
                     <VideoPlayer operationName={operationName} />
                   </div>
                 ) : (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900 text-white gap-3">
-                    <Loader2 className="w-8 h-8 animate-spin text-[#FF6B35]" />
-                    <p className="text-xs font-bold">Generating your ad...</p>
+                  <>
+                    <img
+                      src="https://images.unsplash.com/photo-1531123897727-8f129e1bf98c?w=400&h=700&fit=crop&crop=faces"
+                      alt="UGC style"
+                      className="absolute inset-0 w-full h-full object-cover opacity-80"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20">
+                      <div className="w-12 h-12 bg-white/30 backdrop-blur-md rounded-full flex items-center justify-center text-white cursor-pointer hover:bg-white/40 transition-colors">
+                        <Play className="w-5 h-5 ml-1" />
+                      </div>
+                    </div>
+                  </>
+                )}
+                <div className="absolute top-3 left-3 bg-black/50 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1 rounded capitalize">UGC</div>
+                {!operationName && (
+                  <div className="absolute bottom-4 left-4 right-4 text-left">
+                    <h4 className="text-white font-black text-xl leading-tight mb-2 tracking-wide">Work smarter with<br/>HP EliteBook</h4>
                   </div>
                 )}
-                <div className="absolute top-3 left-3 bg-black/50 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1 rounded capitalize">{selectedStyle}</div>
               </div>
-              <button className="w-full bg-[#FF6B35] hover:bg-[#e85a24] text-white font-bold py-2 rounded-xl text-xs transition-colors shadow-sm">
-                Boost This Ad
-              </button>
+              <div className="flex gap-2 w-full">
+                <button className="flex-1 bg-white border border-gray-200 hover:border-[#FF6B35] hover:text-[#FF6B35] text-gray-700 font-bold py-2 rounded-xl text-xs transition-colors shadow-sm">
+                  Edit
+                </button>
+                <button className="flex-1 bg-[#FF6B35] hover:bg-[#e85a24] text-white font-bold py-2 rounded-xl text-xs transition-colors shadow-sm">
+                  Use This Ad
+                </button>
+              </div>
             </div>
 
             {/* Slot 2 — Style preview */}
@@ -167,18 +186,23 @@ export default function AIAdStudioView() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20">
-                  <div className="w-12 h-12 bg-white/30 backdrop-blur-md rounded-full flex items-center justify-center text-white">
+                  <div className="w-12 h-12 bg-white/30 backdrop-blur-md rounded-full flex items-center justify-center text-white cursor-pointer hover:bg-white/40 transition-colors">
                     <Play className="w-5 h-5 ml-1" />
                   </div>
                 </div>
                 <div className="absolute top-3 left-3 bg-black/50 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1 rounded">Cinematic</div>
-                <div className="absolute bottom-4 left-4 right-4 text-center">
+                <div className="absolute bottom-4 left-4 right-4 text-left">
                   <h4 className="text-white font-black text-xl leading-tight uppercase">Power<br />Meets<br />Reliability</h4>
                 </div>
               </div>
-              <button className="w-full bg-white border border-gray-200 hover:border-[#FF6B35] hover:text-[#FF6B35] text-gray-700 font-bold py-2 rounded-xl text-xs transition-colors shadow-sm">
-                Boost This Ad
-              </button>
+              <div className="flex gap-2 w-full">
+                <button className="flex-1 bg-white border border-gray-200 hover:border-[#FF6B35] hover:text-[#FF6B35] text-gray-700 font-bold py-2 rounded-xl text-xs transition-colors shadow-sm">
+                  Edit
+                </button>
+                <button className="flex-1 bg-white border border-gray-200 text-[#FF6B35] hover:bg-orange-50 font-bold py-2 rounded-xl text-xs transition-colors shadow-sm">
+                  Use This Ad
+                </button>
+              </div>
             </div>
 
             {/* Slot 3 — Style preview */}
@@ -186,24 +210,29 @@ export default function AIAdStudioView() {
               <div className="relative aspect-[9/16] bg-black rounded-2xl overflow-hidden group shadow-md border border-gray-100">
                 <img
                   src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=400&h=700&fit=crop"
-                  alt="UGC style"
+                  alt="Comedy style"
                   className="absolute inset-0 w-full h-full object-cover opacity-80"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20">
-                  <div className="w-12 h-12 bg-white/30 backdrop-blur-md rounded-full flex items-center justify-center text-white">
+                  <div className="w-12 h-12 bg-white/30 backdrop-blur-md rounded-full flex items-center justify-center text-white cursor-pointer hover:bg-white/40 transition-colors">
                     <Play className="w-5 h-5 ml-1" />
                   </div>
                 </div>
-                <div className="absolute top-3 left-3 bg-black/50 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1 rounded">UGC</div>
-                <div className="absolute bottom-4 left-4 right-4 text-center">
-                  <h4 className="text-white font-bold text-sm leading-tight mb-1">When your product just works...</h4>
-                  <p className="text-white/70 text-[10px]">Authentic. Relatable. Converts.</p>
+                <div className="absolute top-3 left-3 bg-black/50 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1 rounded">Comedy / Meme</div>
+                <div className="absolute bottom-4 left-4 right-4 text-left">
+                  <h4 className="text-white font-bold text-sm leading-tight mb-1">When your laptop just works...</h4>
+                  <p className="text-white/70 text-[10px]">No more freezing during Zoom calls 😭</p>
                 </div>
               </div>
-              <button className="w-full bg-white border border-gray-200 hover:border-[#FF6B35] hover:text-[#FF6B35] text-gray-700 font-bold py-2 rounded-xl text-xs transition-colors shadow-sm">
-                Boost This Ad
-              </button>
+              <div className="flex gap-2 w-full">
+                <button className="flex-1 bg-white border border-gray-200 hover:border-[#FF6B35] hover:text-[#FF6B35] text-gray-700 font-bold py-2 rounded-xl text-xs transition-colors shadow-sm">
+                  Edit
+                </button>
+                <button className="flex-1 bg-white border border-gray-200 text-[#FF6B35] hover:bg-orange-50 font-bold py-2 rounded-xl text-xs transition-colors shadow-sm">
+                  Use This Ad
+                </button>
+              </div>
             </div>
 
           </div>
