@@ -1,7 +1,6 @@
 import React from 'react';
 import {
-  LayoutDashboard, Package, Sparkles, Megaphone, ShoppingCart,
-  Users, BarChart3, Wallet, Settings
+  LayoutDashboard, Sparkles, Megaphone, Settings
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -14,13 +13,8 @@ interface SidebarProps {
 export default function Sidebar({ currentView, onNavigate, isMobileOpen, onCloseMobile }: SidebarProps) {
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'products', label: 'Products', icon: Package },
     { id: 'studio', label: 'AI Ads Studio', icon: Sparkles },
     { id: 'campaigns', label: 'Campaigns', icon: Megaphone },
-    { id: 'orders', label: 'Orders', icon: ShoppingCart },
-    { id: 'customers', label: 'Customers', icon: Users },
-    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-    { id: 'finance', label: 'Finance', icon: Wallet },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
@@ -34,22 +28,18 @@ export default function Sidebar({ currentView, onNavigate, isMobileOpen, onClose
         />
       )}
 
-      {/* Sidebar Content */}
+      {/* Sidebar */}
       <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#0B0F19] text-gray-400 flex flex-col transition-transform duration-300 md:translate-x-0 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'} md:static md:flex-shrink-0`}>
 
         {/* Logo */}
         <div className="h-16 flex items-center px-6 mb-4 mt-2">
-          <div className="flex items-center gap-2">
-            {/* Peach logo icon */}
-            <div className="w-9 h-9 flex items-center justify-center bg-[#FF6B35] rounded-xl shadow-md shadow-orange-900/30 shrink-0">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <ellipse cx="12" cy="13" rx="8" ry="8" fill="white" fillOpacity="0.9"/>
-                <path d="M12 5 C12 5 14 2 18 3" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 flex items-center justify-center bg-[#FF6B35] rounded-xl shadow-md shadow-orange-900/30 shrink-0 text-white font-black text-lg select-none">
+              A
             </div>
             <div>
-              <h1 className="text-white font-bold text-lg leading-none tracking-wide">Peach</h1>
-              <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-0.5">Kenya Marketplace</p>
+              <h1 className="text-white font-bold text-lg leading-none tracking-wide">AddSell</h1>
+              <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-0.5">AI Ad Platform</p>
             </div>
           </div>
         </div>
