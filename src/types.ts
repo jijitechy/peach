@@ -14,6 +14,25 @@ export interface Seller {
   avatar: string;
 }
 
+export interface ProductVariant {
+  id: string;
+  name: string; // e.g. "128GB - Black"
+  price: number;
+  stockQuantity: number;
+}
+
+export interface Order {
+  id: string;
+  listingId: string;
+  buyerId: string;
+  sellerId: string;
+  variantId?: string;
+  amount: number;
+  status: EscrowStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Listing {
   id: string;
   title: string;
@@ -63,6 +82,10 @@ export interface Listing {
     metaClicks: number;
     tikTokClicks: number;
   } | null;
+  // New properties for Phase A
+  variants?: ProductVariant[];
+  imei?: string;
+  stockQuantity?: number;
 }
 
 export interface Bid {

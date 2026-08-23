@@ -4,7 +4,7 @@ import {
   Plus, Search, Sparkles, Check, MapPin, 
   Activity, Award, ShieldCheck, Tag, Loader2, Info, ArrowUpRight, Smartphone, Coins, Landmark, X, Heart
 } from "lucide-react";
-import { Listing, UserState } from "./types";
+import { Listing, UserState, ProductVariant, Order } from "./types";
 import Navbar from "./components/Navbar";
 import ListingCard from "./components/ListingCard";
 import ListingDetail from "./components/ListingDetail";
@@ -210,6 +210,9 @@ export default function App() {
   const [formMinIncrement, setFormMinIncrement] = useState<string>("500");
   const [formAllowBidding, setFormAllowBidding] = useState<boolean>(true);
   const [formVideoUrl, setFormVideoUrl] = useState<string>("");
+  const [formVariants, setFormVariants] = useState<ProductVariant[]>([]);
+  const [formImei, setFormImei] = useState<string>("");
+  const [formStockQuantity, setFormStockQuantity] = useState<string>("1");
 
   // Post form AI Assist triggers
   const [isAiDrafting, setIsAiDrafting] = useState<boolean>(false);
