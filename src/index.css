@@ -1,48 +1,113 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-display: "Space Grotesk", sans-serif;
   --font-mono: "JetBrains Mono", monospace;
-  
+
+  /* AddSell Brand Colors */
+  --color-brand-primary: #f97316;
+  --color-brand-secondary: #8b5cf6;
+  --color-brand-accent: #06b6d4;
+  --color-brand-gold: #f59e0b;
+
+  /* Kenyan-inspired palette */
+  --color-kenya-red: #bb0000;
+  --color-kenya-green: #006600;
   --color-safaricom-green: #2B7A1C;
   --color-safaricom-light: #44B92C;
-  --color-brand-primary: #f97316; /* Kazi/Bid Orange */
+
+  /* Dark canvas */
+  --color-canvas: #0a0a0f;
+  --color-surface: #13131a;
+  --color-surface-2: #1c1c26;
+  --color-surface-3: #252532;
+  --color-border: rgba(255,255,255,0.08);
+  --color-border-bright: rgba(255,255,255,0.15);
 }
 
-/* Custom visual pulse effects for microinteractions */
-@keyframes trust-glow {
-  0%, 100% { box-shadow: 0 0 10px rgba(43, 122, 28, 0.15); }
-  50% { box-shadow: 0 0 20px rgba(43, 122, 28, 0.35); }
+/* === Animations === */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-12px); }
+}
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(249,115,22,0.2); }
+  50% { box-shadow: 0 0 40px rgba(249,115,22,0.5), 0 0 80px rgba(139,92,246,0.2); }
+}
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes grid-scroll {
+  from { transform: translateY(0); }
+  to { transform: translateY(-50%); }
+}
+@keyframes aurora {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
-@keyframes bid-pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
+.animate-float { animation: float 6s ease-in-out infinite; }
+.animate-shimmer { background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent); background-size: 200% 100%; animation: shimmer 2s infinite; }
+.animate-glow-pulse { animation: glow-pulse 3s ease-in-out infinite; }
+.animate-slide-up { animation: slide-up 0.6s ease-out forwards; }
+.animate-spin-slow { animation: spin-slow 20s linear infinite; }
+.animate-aurora { background-size: 300% 300%; animation: aurora 8s ease infinite; }
+
+/* Glass morphism */
+.glass {
+  background: rgba(255,255,255,0.04);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.glass-bright {
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.15);
 }
 
-.trust-card {
-  animation: trust-glow 4s infinite ease-in-out;
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #f97316, #8b5cf6, #06b6d4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.gradient-text-warm {
+  background: linear-gradient(135deg, #f97316, #f59e0b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-.bid-bounce {
-  animation: bid-pulse 0.3s ease-in-out;
-}
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(249,115,22,0.25); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(249,115,22,0.4); }
 
-/* WebKit scrollbar adjustments */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(156, 163, 175, 0.3);
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(156, 163, 175, 0.5);
+/* No-scrollbar utility */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Focus ring */
+*:focus-visible { outline: 2px solid rgba(249,115,22,0.6); outline-offset: 2px; }
+
+/* Drop zone */
+.drop-zone-active {
+  border-color: #f97316 !important;
+  background: rgba(249,115,22,0.05) !important;
 }

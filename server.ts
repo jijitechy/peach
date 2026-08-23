@@ -1565,6 +1565,121 @@ Refining guidelines:
 });
 
 
+// ============================================================
+// AI Ad Generator — Core AddSell Endpoint
+// POST /api/ai/generate-ad
+// Body: { image?: base64string, prompt?: string, style, characterStyle, outputFormat }
+// ============================================================
+app.post("/api/ai/generate-ad", async (req, res) => {
+  const { image, prompt, style, characterStyle, outputFormat } = req.body;
+
+  // Style → tone mapping
+  const STYLE_TONES: Record<string, string> = {
+    funny: "hilarious, meme-worthy, Kenyan internet humour, relatable everyday Kenyan situations, light-hearted jokes, witty punchlines",
+    serious: "professional, trustworthy, corporate, aspirational, straightforward and confident",
+    cinematic: "dramatic, high-production, emotional storytelling, cinematic pacing, evocative and powerful",
+    cartoon: "bold, colourful, animated, playful cartoon aesthetic, African comic-book inspired, vibrant and fun",
+    luxury: "premium, exclusive, aspirational, sleek, sophisticated, high-end lifestyle",
+    flashsale: "urgent, high-energy, bold, FOMO-inducing, limited-time offer, attention-grabbing deals",
+  };
+
+  const CHARACTER_CONTEXT: Record<string, string> = {
+    nairobi_street: "urban Kenyan youth from Nairobi streets, Gen Z energy, matatu culture, hip Eastlands or Westlands vibe",
+    corporate_nairobi: "professional Kenyan in a suit or smart casual, Nairobi CBD or Westgate setting, polished and ambitious",
+    coastal_mombasa: "Swahili coast culture, Mombasa or Malindi setting, relaxed coastal Kenyan vibe, kiswahili phrases welcome",
+    rural_shamba: "authentic rural Kenyan setting, hardworking, community-oriented, honest and relatable shamba life",
+    gen_z_kenya: "Kenyan Gen Z, TikTok-savvy, slang like 'sawa', 'maze', 'ni ile ile', digital native, trendy streetwear",
+  };
+
+  const tone = STYLE_TONES[style] || STYLE_TONES.funny;
+  const characterCtx = CHARACTER_CONTEXT[characterStyle] || CHARACTER_CONTEXT.nairobi_street;
+  const isVideoFormat = outputFormat === "video_script" || outputFormat === "tiktok";
+
+  const productContext = prompt ? `Product description: "${prompt}"` : "Analyze the uploaded product image to determine what the product is.";
+
+  const systemPrompt = `You are AddSell AI — Kenya's top ad copywriter AI. You create world-class advertisements specifically for the Kenyan market.
+
+CRITICAL RULES:
+- All generated human characters MUST be Black African / Kenyan ethnicity by default
+- Use Kenyan cultural context: Nairobi, Mombasa, shilling (KES), M-Pesa, matatus, Safaricom, local references
+- The tone must be: ${tone}
+- The character/setting context is: ${characterCtx}
+- Output format requested: ${outputFormat}
+
+${productContext}
+
+Generate a complete advertisement package as a JSON object with EXACTLY these fields:
+{
+  "headline": "Short punchy headline (max 8 words)",
+  "subheadline": "Supporting line that adds context (max 15 words)",
+  "bodyText": "Compelling body copy (2-3 sentences, Kenyan flavour, tone-appropriate)",
+  "caption": "Social media caption ready to post (include emojis, conversational, Kenyan market-focused)",
+  "cta": "Call to action button text (max 4 words, e.g. 'Buy Now on AddSell', 'Order Today!')",
+  "hashtags": ["array", "of", "10", "relevant", "hashtags", "no", "hash", "symbol", "NairobiDeals", "AddSell"],
+  "videoScript": ${isVideoFormat ? '"Full video script with scene-by-scene breakdown: Scene 1: [opening shot description] VOICE: [dialogue]. Scene 2: [description] VOICE: [dialogue]. etc. Make it 15-30 seconds. Include directing notes for Kenyan characters and setting."' : '"" (empty string, not needed for image format)'},
+  "imagePrompt": "Detailed prompt for an AI image generator (Midjourney/DALL-E style) to create the ad visual. MUST specify: Black African Kenyan people, ${characterCtx} setting, ${tone} tone, product prominently featured, high quality photography or illustration style as appropriate"
+}
+
+IMPORTANT: Return ONLY the raw JSON object. No markdown, no code blocks, just the JSON.`;
+
+  // Static fallback for when Gemini is not available
+  const fallbackAd = {
+    headline: prompt ? `Get Your ${prompt.split(' ').slice(0, 3).join(' ')} Today!` : "Amazing Deal Alert! 🔥",
+    subheadline: "Quality products, Kenyan prices. Only on AddSell.",
+    bodyText: `Maze! Have you seen this deal? ${prompt || "This product"} is flying off the shelves. Wachana na overpriced stuff — AddSell has got you covered. M-Pesa accepted, fast delivery across Kenya!`,
+    caption: `🔥 Sawa sawa deals are HERE! ${prompt || "Check this out"} — quality unashamed! Don't sleep on this one, order now before stock runs out! 💯\n\nDelivery nationwide. M-Pesa accepted. ✅`,
+    cta: "Order on AddSell",
+    hashtags: ["AddSell", "NairobiDeals", "KenyaOnline", "ShopKenya", "MadeinKenya", "NairobiShopping", "BuyKenya", "KenyaDeals", "MpesaPay", "OnlineShopping254"],
+    videoScript: isVideoFormat ? `Scene 1: [Open on a young Kenyan man in a matatu, scrolling phone] VOICE: "Maze, umewahi pata deal kama hii?" Scene 2: [Cut to product close-up with dramatic lighting] VOICE: "${prompt || "This product"} — quality bila compromise!" Scene 3: [Excited reaction shot, Nairobi skyline background] VOICE: "Order saa hii on AddSell. M-Pesa accepted!" Scene 4: [Logo end card] TEXT: "AddSell — Shop Smart Kenya"` : "",
+    imagePrompt: `Professional advertisement photo featuring a confident Black African Kenyan person (${characterCtx}) holding or using ${prompt || "the featured product"}. ${tone} aesthetic. High-quality photography. Bright Nairobi urban setting or relevant Kenyan backdrop. Product prominently displayed. Modern, eye-catching composition suitable for social media advertising.`,
+  };
+
+  if (!isGeminiAvailable || !ai) {
+    return res.json(fallbackAd);
+  }
+
+  try {
+    const contents: any[] = [];
+
+    if (image && image.startsWith("data:image")) {
+      // Extract base64 data and mime type
+      const matches = image.match(/^data:([^;]+);base64,(.+)$/);
+      if (matches) {
+        const mimeType = matches[1];
+        const base64Data = matches[2];
+        contents.push({
+          role: "user",
+          parts: [
+            { text: systemPrompt },
+            { inlineData: { mimeType, data: base64Data } },
+          ],
+        });
+      } else {
+        contents.push({ role: "user", parts: [{ text: systemPrompt }] });
+      }
+    } else {
+      contents.push({ role: "user", parts: [{ text: systemPrompt }] });
+    }
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.0-flash",
+      contents,
+    });
+
+    let rawText = response.text || "";
+    // Strip markdown code fences if present
+    rawText = rawText.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```\s*$/i, "").trim();
+
+    const parsed = JSON.parse(rawText);
+    return res.json(parsed);
+  } catch (err: any) {
+    console.error("AI generate-ad error:", err);
+    // Return fallback on any error
+    return res.json(fallbackAd);
+  }
+});
+
+
 // Express server start
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
