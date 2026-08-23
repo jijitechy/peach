@@ -40,9 +40,9 @@ export default function Sidebar({ currentView, onNavigate, isMobileOpen, onClose
         {/* Logo */}
         <div className="h-16 flex items-center px-6 mb-4 mt-2">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 flex items-center justify-center text-xl bg-orange-100 rounded-full">🍑</div>
+            <div className="w-8 h-8 flex items-center justify-center text-xl bg-indigo-100 text-[#5D5FEF] font-black rounded-xl border border-indigo-200 shadow-sm">A</div>
             <div>
-              <h1 className="text-white font-bold text-lg leading-none">Peach</h1>
+              <h1 className="text-white font-bold text-lg leading-none tracking-wide">AddSell</h1>
               <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-0.5">Kenya Marketplace</p>
             </div>
           </div>
