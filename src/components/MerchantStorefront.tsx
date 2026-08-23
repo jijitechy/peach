@@ -97,8 +97,8 @@ export default function MerchantStorefront({ seller, listings, onListingClick, o
                   key={listing.id}
                   listing={listing}
                   onClick={() => onListingClick(listing.id)}
-                  onToggleWatchlist={() => {}}
-                  isWatched={false}
+                  isFavorited={false}
+                  onToggleFavorite={() => {}}
                 />
               ))}
             </div>
