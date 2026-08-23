@@ -38,29 +38,29 @@ export default function Sidebar({ currentView, onNavigate, isMobileOpen, onClose
       <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#0B0F19] text-gray-400 flex flex-col transition-transform duration-300 md:translate-x-0 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'} md:static md:flex-shrink-0`}>
         
         {/* Logo */}
-        <div className="h-16 flex items-center px-6 mb-4">
+        <div className="h-16 flex items-center px-6 mb-4 mt-2">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center text-white font-black text-xl">P</div>
+            <div className="w-8 h-8 flex items-center justify-center text-xl bg-orange-100 rounded-full">🍑</div>
             <div>
               <h1 className="text-white font-bold text-lg leading-none">Peach</h1>
-              <p className="text-[10px] text-gray-500 uppercase tracking-widest">Kenya Marketplace</p>
+              <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-0.5">Kenya Marketplace</p>
             </div>
           </div>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-4 space-y-1 overflow-y-auto no-scrollbar pb-6">
+        <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto no-scrollbar pb-6">
           {navItems.map((item) => (
             <button
               key={item.id}
               onClick={() => { onNavigate(item.id); onCloseMobile(); }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
                 currentView === item.id 
-                  ? 'bg-indigo-600/10 text-indigo-400 font-bold border border-indigo-500/20 shadow-inner' 
-                  : 'hover:bg-white/5 hover:text-white'
+                  ? 'bg-[#5D5FEF] text-white shadow-lg shadow-indigo-900/20' 
+                  : 'hover:bg-white/5 text-gray-400 hover:text-white'
               }`}
             >
-              <item.icon className={`w-5 h-5 ${currentView === item.id ? 'text-indigo-400' : 'text-gray-500'}`} />
+              <item.icon className={`w-5 h-5 ${currentView === item.id ? 'text-white' : 'text-gray-500'}`} />
               {item.label}
             </button>
           ))}

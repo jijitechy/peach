@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { Sparkles, ChevronDown, Check, Play, User, PlayCircle, Film, Diamond, TrendingUp } from 'lucide-react';
+import { Sparkles, ChevronDown, Check, Play, User, PlayCircle, Film, Diamond, TrendingUp, Loader2 } from 'lucide-react';
+import VideoPlayer from '../components/VideoPlayer';
 
 export default function AIAdStudioView() {
   const [selectedStyle, setSelectedStyle] = useState('ugc');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [showResults, setShowResults] = useState(true); // Default true to show the authentic mock
+  const [showResults, setShowResults] = useState(true);
+  const [operationName, setOperationName] = useState<string | null>(null);
 
   const styles = [
     { id: 'viral', label: 'Viral', icon: TrendingUp },
@@ -14,12 +16,29 @@ export default function AIAdStudioView() {
     { id: 'luxury', label: 'Luxury', icon: Diamond },
   ];
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     setIsGenerating(true);
-    setTimeout(() => {
+    setShowResults(true);
+    setOperationName(null);
+    try {
+      const vidRes = await fetch('/api/ai/generate-video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          prompt: "HP EliteBook 840 G5", 
+          style: selectedStyle, 
+          characterStyle: 'corporate_nairobi' 
+        }),
+      });
+      if (vidRes.ok) {
+        const vidData = await vidRes.json();
+        setOperationName(vidData.operationName);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
       setIsGenerating(false);
-      setShowResults(true);
-    }, 2000);
+    }
   };
 
   return (
@@ -34,12 +53,12 @@ export default function AIAdStudioView() {
         {/* Step 1 */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xs">1</div>
+            <div className="w-6 h-6 rounded-full bg-[#5D5FEF] text-white flex items-center justify-center font-bold text-xs">1</div>
             <h3 className="text-sm font-bold text-gray-900">Select Product</h3>
           </div>
           <div className="ml-9">
             <div className="relative">
-              <select className="w-full appearance-none bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl px-4 py-3 pr-10 focus:outline-none focus:border-indigo-500 focus:bg-white transition-colors">
+              <select className="w-full appearance-none bg-white border border-gray-200 text-gray-900 text-sm rounded-xl px-4 py-3 pr-10 focus:outline-none focus:border-[#5D5FEF] transition-colors shadow-sm">
                 <option>HP EliteBook 840 G5 - Core i7, 16GB RAM, 512GB SSD</option>
                 <option>Black Sneakers - Size 42</option>
                 <option>iPhone 13 - 128GB Midnight</option>
@@ -52,7 +71,7 @@ export default function AIAdStudioView() {
         {/* Step 2 */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xs">2</div>
+            <div className="w-6 h-6 rounded-full bg-[#5D5FEF] text-white flex items-center justify-center font-bold text-xs">2</div>
             <div className="flex-1 flex items-center justify-between">
               <h3 className="text-sm font-bold text-gray-900">Choose Ad Styles</h3>
               <span className="text-[10px] text-gray-500">Select the style of advertisements you want to create:</span>
@@ -65,16 +84,16 @@ export default function AIAdStudioView() {
                 onClick={() => setSelectedStyle(style.id)}
                 className={`relative flex flex-col items-center justify-center gap-2 p-4 rounded-xl border transition-all ${
                   selectedStyle === style.id
-                    ? 'border-indigo-600 bg-indigo-50 text-indigo-700 shadow-sm'
+                    ? 'border-[#5D5FEF] bg-[#5D5FEF] text-white shadow-md'
                     : 'border-gray-200 bg-white text-gray-600 hover:border-indigo-300 hover:bg-gray-50'
                 }`}
               >
                 {selectedStyle === style.id && (
-                  <div className="absolute top-2 right-2 w-3 h-3 bg-indigo-600 rounded-full flex items-center justify-center">
-                    <Check className="w-2 h-2 text-white" />
+                  <div className="absolute top-2 right-2 w-3 h-3 bg-white rounded-full flex items-center justify-center">
+                    <Check className="w-2 h-2 text-[#5D5FEF]" />
                   </div>
                 )}
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${selectedStyle === style.id ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-100 text-gray-500'}`}>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${selectedStyle === style.id ? 'bg-white/20' : 'bg-gray-100 text-[#5D5FEF]'}`}>
                    <style.icon className="w-5 h-5" />
                 </div>
                 <span className="text-xs font-bold">{style.label}</span>
@@ -87,7 +106,7 @@ export default function AIAdStudioView() {
           <button 
             onClick={handleGenerate}
             disabled={isGenerating}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-md shadow-indigo-600/20 flex items-center gap-2 transition-colors disabled:opacity-70"
+            className="bg-[#5D5FEF] hover:bg-[#4f46e5] text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-md shadow-indigo-600/20 flex items-center gap-2 transition-colors disabled:opacity-70"
           >
             {isGenerating ? 'Generating...' : 'Generate Ads'} <Sparkles className="w-4 h-4" />
           </button>
@@ -100,28 +119,29 @@ export default function AIAdStudioView() {
           <h2 className="text-lg font-bold text-gray-900 mb-6">AI Generated Advertisement Concepts</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             
-            {/* Ad Concept 1 */}
+            {/* Generated Video (Live) */}
             <div className="flex flex-col gap-3">
               <div className="relative aspect-[9/16] bg-black rounded-2xl overflow-hidden group shadow-md border border-gray-100">
-                <img src="https://images.unsplash.com/photo-1573164713988-8665fc963095?w=400&h=700&fit=crop" alt="UGC Video" className="absolute inset-0 w-full h-full object-cover opacity-80" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20">
-                  <div className="w-12 h-12 bg-white/30 backdrop-blur-md rounded-full flex items-center justify-center text-white">
-                    <Play className="w-5 h-5 ml-1" />
+                {operationName ? (
+                  <div className="absolute inset-0 w-full h-full [&>div]:h-full [&>div]:rounded-none [&>div]:border-none">
+                    <VideoPlayer operationName={operationName} />
                   </div>
-                </div>
-                <div className="absolute top-3 left-3 bg-black/50 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1 rounded">UGC Viral</div>
-                <div className="absolute bottom-4 left-4 right-4">
-                  <h4 className="text-white font-bold text-sm leading-tight mb-1">Work smarter with HP EliteBook</h4>
-                  <p className="text-white/80 text-[10px] line-clamp-2">"This laptop literally changed how I work. The battery life is insane!"</p>
-                </div>
+                ) : (
+                  <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center bg-gray-900 text-white">
+                     <Loader2 className="w-8 h-8 animate-spin text-[#5D5FEF] mb-2" />
+                     <p className="text-xs font-bold">Starting generation...</p>
+                  </div>
+                )}
+                {!operationName && (
+                  <div className="absolute top-3 left-3 bg-black/50 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1 rounded capitalize">{selectedStyle}</div>
+                )}
               </div>
-              <button className="w-full bg-white border border-gray-200 hover:border-indigo-600 hover:text-indigo-600 text-gray-700 font-bold py-2 rounded-xl text-xs transition-colors shadow-sm">
+              <button className="w-full bg-[#F4F7FE] border border-transparent hover:border-[#5D5FEF] hover:text-[#5D5FEF] text-gray-700 font-bold py-2 rounded-xl text-xs transition-colors shadow-sm">
                 Use This Ad
               </button>
             </div>
 
-            {/* Ad Concept 2 */}
+            {/* Ad Concept 2 (Authentic Mock) */}
             <div className="flex flex-col gap-3">
               <div className="relative aspect-[9/16] bg-black rounded-2xl overflow-hidden group shadow-md border border-gray-100">
                 <img src="https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=400&h=700&fit=crop" alt="Cinematic Video" className="absolute inset-0 w-full h-full object-cover opacity-80" />
@@ -136,12 +156,12 @@ export default function AIAdStudioView() {
                   <h4 className="text-white font-black text-xl leading-tight mb-2 tracking-wide uppercase text-center w-full">Power<br/>Meets<br/>Reliability</h4>
                 </div>
               </div>
-              <button className="w-full bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold py-2 rounded-xl text-xs transition-colors shadow-sm">
+              <button className="w-full bg-white border border-gray-200 hover:border-[#5D5FEF] hover:text-[#5D5FEF] text-gray-700 font-bold py-2 rounded-xl text-xs transition-colors shadow-sm">
                 Use This Ad
               </button>
             </div>
 
-            {/* Ad Concept 3 */}
+            {/* Ad Concept 3 (Authentic Mock) */}
             <div className="flex flex-col gap-3">
               <div className="relative aspect-[9/16] bg-black rounded-2xl overflow-hidden group shadow-md border border-gray-100">
                 <img src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=400&h=700&fit=crop" alt="Comedy Video" className="absolute inset-0 w-full h-full object-cover opacity-80" />
@@ -157,7 +177,7 @@ export default function AIAdStudioView() {
                   <p className="text-white/80 text-[10px]">No more freezing during Zoom calls 😭</p>
                 </div>
               </div>
-              <button className="w-full bg-white border border-gray-200 hover:border-indigo-600 hover:text-indigo-600 text-gray-700 font-bold py-2 rounded-xl text-xs transition-colors shadow-sm">
+              <button className="w-full bg-white border border-gray-200 hover:border-[#5D5FEF] hover:text-[#5D5FEF] text-gray-700 font-bold py-2 rounded-xl text-xs transition-colors shadow-sm">
                 Use This Ad
               </button>
             </div>

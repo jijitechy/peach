@@ -9,10 +9,9 @@ interface TopbarProps {
 
 export default function Topbar({ onOpenMobileSidebar, currentView, onNavigate }: TopbarProps) {
   const tabs = [
-    { id: 'dashboard', label: 'Dashboard' },
-    { id: 'products', label: 'Products' },
-    { id: 'studio', label: 'AI Ads Studio' },
-    { id: 'campaigns', label: 'Campaigns' },
+    { id: 'dashboard', label: 'Explore Auctions' },
+    { id: 'products', label: 'Post Listing' },
+    { id: 'studio', label: 'Merchant Hub' },
   ];
 
   return (
