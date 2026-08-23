@@ -1678,6 +1678,79 @@ IMPORTANT: Return ONLY the raw JSON object. No markdown, no code blocks, just th
     return res.json(fallbackAd);
   }
 });
+// ============================================================
+// AI Video Generation — Google Veo
+// POST /api/ai/generate-video
+// ============================================================
+app.post("/api/ai/generate-video", async (req, res) => {
+  const { prompt, style, characterStyle, image } = req.body;
+  if (!ai) {
+    return res.status(503).json({ error: "Gemini API not configured" });
+  }
+
+  const STYLE_TONES: Record<string, string> = {
+    funny: "hilarious, meme-worthy, Kenyan internet humour",
+    serious: "professional, trustworthy, corporate",
+    cinematic: "dramatic, high-production, cinematic pacing",
+    cartoon: "bold, colourful, animated, African comic-book inspired",
+    luxury: "premium, exclusive, aspirational, high-end",
+    flashsale: "urgent, high-energy, bold, FOMO-inducing",
+  };
+  const tone = STYLE_TONES[style] || STYLE_TONES.funny;
+
+  const CHARACTER_CONTEXT: Record<string, string> = {
+    nairobi_street: "urban Kenyan youth from Nairobi streets",
+    corporate_nairobi: "professional Kenyan in a suit or smart casual",
+    coastal_mombasa: "Swahili coast culture, Mombasa setting",
+    rural_shamba: "authentic rural Kenyan setting",
+    gen_z_kenya: "Kenyan Gen Z, TikTok-savvy",
+  };
+  const characterCtx = CHARACTER_CONTEXT[characterStyle] || CHARACTER_CONTEXT.nairobi_street;
+
+  const finalPrompt = `A ${tone} video advertisement featuring ${characterCtx}. Product: ${prompt || "featured product"}. High-quality, 720p, cinematic lighting.`;
+
+  try {
+    // We use the new generateVideos method
+    const operation = await ai.models.generateVideos({
+      model: "veo-2.0-generate-001",
+      prompt: finalPrompt,
+      config: {
+        aspectRatio: "16:9",
+        personGeneration: "allow_adult",
+      },
+    });
+    
+    return res.json({ operationName: operation.name, status: "processing" });
+  } catch (err: any) {
+    console.error("AI generate-video error:", err);
+    return res.status(500).json({ error: err.message || "Failed to start video generation" });
+  }
+});
+
+app.get("/api/ai/video-status/:operationName", async (req, res) => {
+  const { operationName } = req.params;
+  if (!ai) {
+    return res.status(503).json({ error: "Gemini API not configured" });
+  }
+  try {
+    const operation = await ai.operations.get({ name: operationName } as any);
+    if (operation.done) {
+      const response = operation.response as any;
+      if (response?.generatedVideos?.[0]) {
+        const video = response.generatedVideos[0];
+        // video.video is typically the uri or base64 depending on SDK version
+        // We will return it to the client
+        return res.json({ done: true, video: video.video.uri || video.video.data });
+      } else if (operation.error) {
+         return res.json({ done: true, error: operation.error });
+      }
+    }
+    return res.json({ done: false });
+  } catch (err: any) {
+    console.error("AI video-status error:", err);
+    return res.status(500).json({ error: err.message || "Failed to get video status" });
+  }
+});
 
 
 // Express server start
