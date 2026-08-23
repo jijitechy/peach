@@ -1,42 +1,35 @@
 import React, { useState } from "react";
-import LandingPage from "./components/LandingPage";
-import AdCreatorStudio from "./components/AdCreatorStudio";
-import AdPreviewPanel from "./components/AdPreviewPanel";
-import type { GeneratedAd } from "./components/AdCreatorStudio";
+import DashboardLayout from "./components/DashboardLayout";
+import DashboardView from "./views/DashboardView";
+import ProductsView from "./views/ProductsView";
+import AIAdStudioView from "./views/AIAdStudioView";
 
-type AppView = "landing" | "studio" | "preview";
+type View = "dashboard" | "products" | "studio" | "campaigns" | "orders" | "customers" | "analytics" | "finance" | "settings";
 
 export default function App() {
-  const [view, setView] = useState<AppView>("landing");
-  const [generatedAd, setGeneratedAd] = useState<GeneratedAd | null>(null);
-  const [productImage, setProductImage] = useState<string | null>(null);
+  const [currentView, setCurrentView] = useState<View>("dashboard");
 
-  const handleAdGenerated = (ad: GeneratedAd, image: string | null) => {
-    setGeneratedAd(ad);
-    setProductImage(image);
-    setView("preview");
-  };
-
-  const handleRegenerate = () => {
-    setView("studio");
+  const renderView = () => {
+    switch (currentView) {
+      case "dashboard":
+        return <DashboardView onNavigate={(view) => setCurrentView(view as View)} />;
+      case "products":
+        return <ProductsView />;
+      case "studio":
+        return <AIAdStudioView />;
+      default:
+        return (
+          <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-gray-500">
+            <h2 className="text-xl font-bold mb-2 capitalize">{currentView} View</h2>
+            <p className="text-sm">This view is currently under construction.</p>
+          </div>
+        );
+    }
   };
 
   return (
-    <>
-      {view === "landing" && (
-        <LandingPage onGetStarted={() => setView("studio")} />
-      )}
-      {view === "studio" && (
-        <AdCreatorStudio onAdGenerated={handleAdGenerated} />
-      )}
-      {view === "preview" && generatedAd && (
-        <AdPreviewPanel
-          ad={generatedAd}
-          productImage={productImage}
-          onBack={() => setView("studio")}
-          onRegenerate={handleRegenerate}
-        />
-      )}
-    </>
+    <DashboardLayout currentView={currentView} onNavigate={(view) => setCurrentView(view as View)}>
+      {renderView()}
+    </DashboardLayout>
   );
 }

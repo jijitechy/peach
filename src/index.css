@@ -1,120 +1,21 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
-@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
-@theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-display: "Space Grotesk", sans-serif;
-  --font-mono: "JetBrains Mono", monospace;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-  /* AddSell Brand Colors */
-  --color-brand-primary: #f97316;
-  --color-brand-secondary: #8b5cf6;
-  --color-brand-accent: #06b6d4;
-  --color-brand-gold: #f59e0b;
-
-  /* Kenyan-inspired palette */
-  --color-kenya-red: #bb0000;
-  --color-kenya-green: #006600;
-  --color-safaricom-green: #2B7A1C;
-  --color-safaricom-light: #44B92C;
-
-  /* Dark canvas */
-  --color-canvas: #0a0a0f;
-  --color-surface: #13131a;
-  --color-surface-2: #1c1c26;
-  --color-surface-3: #252532;
-  --color-border: rgba(255,255,255,0.08);
-  --color-border-bright: rgba(255,255,255,0.15);
+@layer base {
+  body {
+    @apply font-sans antialiased text-gray-900 bg-gray-50;
+  }
 }
 
-/* === Animations === */
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-12px); }
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-@keyframes glow-pulse {
-  0%, 100% { box-shadow: 0 0 20px rgba(249,115,22,0.2); }
-  50% { box-shadow: 0 0 40px rgba(249,115,22,0.5), 0 0 80px rgba(139,92,246,0.2); }
-}
-@keyframes slide-up {
-  from { opacity: 0; transform: translateY(24px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-@keyframes spin-slow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-@keyframes grid-scroll {
-  from { transform: translateY(0); }
-  to { transform: translateY(-50%); }
-}
-@keyframes aurora {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-@keyframes progress-bar {
-  0% { transform: translateX(-100%); }
-  50% { transform: translateX(0%); }
-  100% { transform: translateX(100%); }
-}
-
-.animate-float { animation: float 6s ease-in-out infinite; }
-.animate-shimmer { background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent); background-size: 200% 100%; animation: shimmer 2s infinite; }
-.animate-glow-pulse { animation: glow-pulse 3s ease-in-out infinite; }
-.animate-slide-up { animation: slide-up 0.6s ease-out forwards; }
-.animate-spin-slow { animation: spin-slow 20s linear infinite; }
-.animate-aurora { background-size: 300% 300%; animation: aurora 8s ease infinite; }
-.animate-progress-bar { animation: progress-bar 2s ease-in-out infinite; width: 50%; }
-
-
-/* Glass morphism */
-.glass {
-  background: rgba(255,255,255,0.04);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255,255,255,0.08);
-}
-.glass-bright {
-  background: rgba(255,255,255,0.08);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255,255,255,0.15);
-}
-
-/* Gradient text */
-.gradient-text {
-  background: linear-gradient(135deg, #f97316, #8b5cf6, #06b6d4);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-.gradient-text-warm {
-  background: linear-gradient(135deg, #f97316, #f59e0b);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* Scrollbar */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(249,115,22,0.25); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(249,115,22,0.4); }
-
-/* No-scrollbar utility */
-.no-scrollbar::-webkit-scrollbar { display: none; }
-.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-/* Focus ring */
-*:focus-visible { outline: 2px solid rgba(249,115,22,0.6); outline-offset: 2px; }
-
-/* Drop zone */
-.drop-zone-active {
-  border-color: #f97316 !important;
-  background: rgba(249,115,22,0.05) !important;
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
 }
