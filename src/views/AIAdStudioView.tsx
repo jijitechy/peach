@@ -52,10 +52,29 @@ export default function AIAdStudioView() {
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-8">
 
-        {/* Step 1 – Product */}
+        {/* Step 1 – Upload Media */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-6 h-6 rounded-full bg-[#FF6B35] text-white flex items-center justify-center font-bold text-xs shrink-0">1</div>
+            <h3 className="text-sm font-bold text-gray-900">Upload Image or Video</h3>
+          </div>
+          <div className="ml-9">
+            <div className="w-full border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center p-8 text-center cursor-pointer hover:border-[#FF6B35] hover:bg-orange-50 transition-colors">
+              <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center text-[#FF6B35] mb-4">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+              </div>
+              <p className="text-sm font-bold text-gray-700">Click to upload or drag and drop</p>
+              <p className="text-xs text-gray-500 mt-1">SVG, PNG, JPG, MP4 or GIF (max. 800x400px)</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Step 2 – Product */}
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-6 h-6 rounded-full bg-[#FF6B35] text-white flex items-center justify-center font-bold text-xs shrink-0">2</div>
             <h3 className="text-sm font-bold text-gray-900">Describe Your Product</h3>
           </div>
           <div className="ml-9">
@@ -69,11 +88,11 @@ export default function AIAdStudioView() {
           </div>
         </div>
 
-        {/* Step 2 – Style */}
+        {/* Step 3 – Style */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-6 h-6 rounded-full bg-[#FF6B35] text-white flex items-center justify-center font-bold text-xs shrink-0">2</div>
-            <h3 className="text-sm font-bold text-gray-900">Choose Ad Style</h3>
+            <div className="w-6 h-6 rounded-full bg-[#FF6B35] text-white flex items-center justify-center font-bold text-xs shrink-0">3</div>
+            <h3 className="text-sm font-bold text-gray-900">Choose Ad Style & Templates</h3>
           </div>
           <div className="ml-9 grid grid-cols-2 sm:grid-cols-5 gap-3">
             {styles.map(style => (
