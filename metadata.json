@@ -1,5 +1,5 @@
 {
-  "name": "Peach",
+  "name": "AddSell",
   "description": "Secure peer-to-peer bidding and premium new & pre-owned marketplace with integrated escrow payments, simulated M-Pesa STK push queries, safe system-guided delivery tracking, and AI-powered smart description generation.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

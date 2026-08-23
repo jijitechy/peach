@@ -171,7 +171,7 @@ export default function MerchantHub({ currentUser, onRefreshListings, onPostNewT
           location: l.location,
           price: l.currentBid || l.startingBid,
           allowBidding: l.status === 'active',
-          deepLink: `https://peach.co.ke/listings/${l.id}`,
+          deepLink: `https://addsell.co.ke/listings/${l.id}`,
           network: boostNetwork
         })
       });
@@ -543,7 +543,7 @@ export default function MerchantHub({ currentUser, onRefreshListings, onPostNewT
           <div className="bg-amber-50/50 border border-amber-100 rounded-2xl p-4 flex gap-3 text-xs text-amber-900 leading-normal">
             <Sparkles className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
             <div>
-              <p className="font-bold">Peach Safe Escrow Order Processing Standard</p>
+              <p className="font-bold">AddSell Safe Escrow Order Processing Standard</p>
               <p className="text-[11px] text-amber-850 mt-1">
                 Kenyan peer-to-peer sellers receive funds instantly as soon as: (1) courier tracking details are uploaded, (2) items are dispatched to the buyer, and (3) the buyer confirms physical receipt of the package or the 3-day hold window lapses.
               </p>
@@ -638,7 +638,7 @@ export default function MerchantHub({ currentUser, onRefreshListings, onPostNewT
                         
                         {o.escrowStatus === 'pending_payment' && (
                           <p className="text-[10px] text-amber-700 leading-normal bg-orange-50/50 p-2.5 rounded-xl border border-orange-100 font-medium">
-                            Waiting for bidder to perform M-Pesa push transactions to lock Peach's Safe Escrow.
+                            Waiting for bidder to perform M-Pesa push transactions to lock AddSell's Safe Escrow.
                           </p>
                         )}
 

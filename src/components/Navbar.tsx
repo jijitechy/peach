@@ -35,7 +35,7 @@ export default function Navbar({
       <div className="bg-gray-900 text-white px-4 py-1.5 text-center text-xs flex items-center justify-center gap-2">
         <span className="inline-block w-2 h-2 rounded-full bg-[#44B92C] animate-pulse"></span>
         <span className="font-mono text-gray-300 font-semibold text-[10px] sm:text-xs">
-          PEACH MARKETPLACE — KENYA · Secure Escrow · M-Pesa Payments
+          ADDSELL MARKETPLACE — KENYA · Secure Escrow · M-Pesa Payments
         </span>
       </div>
 
@@ -51,14 +51,14 @@ export default function Navbar({
           >
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#f97316] to-[#ea580c] shadow-md shadow-orange-500/30 group-hover:scale-105 transition-transform ring-2 ring-orange-200 overflow-hidden flex items-center justify-center">
               <img 
-                src="/peachlogo.png" 
-                alt="Peach" 
+                src="/addselllogo.png" 
+                alt="AddSell" 
                 className="w-full h-full object-cover scale-110" 
               />
             </div>
             <div>
               <span className="font-display font-extrabold text-[#f97316] tracking-tight text-xl leading-none">
-                Peach
+                AddSell
               </span>
               <span className="text-gray-400 text-[10px] block leading-none font-mono tracking-wider uppercase font-semibold">
                 Kenya Marketplace
@@ -194,7 +194,7 @@ export default function Navbar({
               <button
                 onClick={onLogout}
                 className="p-2 text-gray-450 hover:text-rose-600 bg-gray-50 hover:bg-rose-50 border border-gray-150 rounded-xl transition-all cursor-pointer"
-                title="Log Out of Peach"
+                title="Log Out of AddSell"
               >
                 <LogOut className="w-3.5 h-3.5" />
               </button>

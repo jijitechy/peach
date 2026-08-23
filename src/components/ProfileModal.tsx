@@ -46,7 +46,7 @@ export default function ProfileModal({
         <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-gray-900 text-white select-none">
           <div className="flex items-center gap-2">
             <User className="w-5 h-5 text-amber-400" />
-            <h3 className="text-base font-display font-bold uppercase tracking-wider">My Peach Profile</h3>
+            <h3 className="text-base font-display font-bold uppercase tracking-wider">My AddSell Profile</h3>
           </div>
           <button
             type="button"
@@ -214,7 +214,7 @@ export default function ProfileModal({
         {/* Bottom Banner presentation line */}
         <div className="p-4 bg-gray-50 border-t border-gray-100 text-center select-none">
           <span className="text-[10px] text-gray-400 font-mono tracking-wider">
-            PEACH ESCROW TRUST ASSURED SECURITY
+            ADDSELL ESCROW TRUST ASSURED SECURITY
           </span>
         </div>
       </motion.div>

@@ -161,7 +161,7 @@ export default function ListingCard({ listing, onClick, isFavorited, onToggleFav
             <Award className="w-9 h-9 text-amber-400 mb-1" />
             <span className="text-white text-sm font-display font-semibold">You Won this Deal!</span>
             <span className="text-emerald-250 text-[10px] max-w-[200px] mt-0.5 leading-tight font-sans">
-              Peach security Escrow payment is active for checkout.
+              AddSell security Escrow payment is active for checkout.
             </span>
           </div>
         )}
@@ -184,7 +184,7 @@ export default function ListingCard({ listing, onClick, isFavorited, onToggleFav
         {listing.isAd ? (
           <div className="mt-4 pt-3 border-t border-gray-50 text-left">
             <span className="text-[10px] font-sans text-orange-600 block uppercase tracking-wider font-extrabold">{listing.adTagline || "Sponsored Corporate Deal"}</span>
-            <span className="text-xs text-gray-400">{listing.videoUrl ? "🎥 Premium Video Brand Campaign Deal." : "Exclusive campaign hosted safely on Peach. Click for details."}</span>
+            <span className="text-xs text-gray-400">{listing.videoUrl ? "🎥 Premium Video Brand Campaign Deal." : "Exclusive campaign hosted safely on AddSell. Click for details."}</span>
           </div>
         ) : listing.allowBidding === false ? (
           <div className="mt-4 pt-3 border-t border-gray-50 flex items-center justify-between">

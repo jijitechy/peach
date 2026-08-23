@@ -81,7 +81,7 @@ export default function ActivityTicker() {
             <span className="relative inline-flex rounded-full h-2 w-2 bg-[#f97316]"></span>
           </span>
           <span className="font-mono text-[10px] font-extrabold uppercase tracking-widest text-[#f97316] flex items-center gap-1">
-            <Radio className="w-3 h-3 text-[#f97316]" /> Peach Live Streams
+            <Radio className="w-3 h-3 text-[#f97316]" /> AddSell Live Streams
           </span>
         </div>
 

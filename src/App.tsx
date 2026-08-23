@@ -780,7 +780,7 @@ export default function App() {
                     onClick={() => setFormVideoUrl("https://assets.mixkit.co/videos/preview/mixkit-delivery-man-handing-over-a-parcel-preview-34444-large.mp4")}
                     className="text-[9px] bg-indigo-50 hover:bg-indigo-100 text-[#ea580c] font-bold px-2 py-0.5 rounded-full border border-indigo-150"
                   >
-                    📦 Peach Courier Loop
+                    📦 AddSell Courier Loop
                   </button>
                 </div>
               </div>
@@ -958,11 +958,11 @@ export default function App() {
             <div className="bg-gradient-to-b from-gray-900 to-gray-950 p-6 rounded-3xl text-white md:flex md:items-center md:justify-between gap-6 shadow-xl border border-gray-800">
                 <div className="max-w-md">
                   <span className="inline-block bg-emerald-500/10 text-emerald-300 border border-emerald-500/25 text-[10px] tracking-wider uppercase font-bold py-0.5 px-2.5 rounded-full mb-1">
-                    Peach Escrow Protection
+                    AddSell Escrow Protection
                   </span>
                   <h3 className="text-xl font-display font-bold">Kenya's Safest Marketplace</h3>
                   <p className="text-xs text-gray-300 mt-1.5 leading-relaxed font-sans">
-                    Every transaction is protected by Peach Escrow — your money is locked until you confirm delivery. M-Pesa payments, fast delivery, zero fraud.
+                    Every transaction is protected by AddSell Escrow — your money is locked until you confirm delivery. M-Pesa payments, fast delivery, zero fraud.
                   </p>
                 </div>
                 <div className="mt-4 md:mt-0 flex flex-col sm:flex-row gap-3 shrink-0">
@@ -1033,7 +1033,7 @@ export default function App() {
       <footer className="bg-white border-t border-gray-100 py-6 select-none mt-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center sm:flex sm:justify-between sm:items-center">
           <p className="text-xs text-gray-400 font-sans">
-            &copy; 2026 Peach Inc. Powered by Safaricom Daraja API & Google Gemini AI. All rights reserved.
+            &copy; 2026 AddSell Inc. Powered by Safaricom Daraja API & Google Gemini AI. All rights reserved.
           </p>
           <div className="mt-2 sm:mt-0 flex justify-center gap-4 text-xs font-semibold text-gray-400 uppercase tracking-widest text-[10px]">
             <span>Nairobi</span>
@@ -1074,7 +1074,7 @@ export default function App() {
                 <Smartphone className="w-6 h-6 text-[#44B92C]" />
               </div>
               <h3 className="text-lg font-display font-extrabold">Simulated Safaricom STK Push</h3>
-              <p className="text-xs text-white/90 mt-1">Directly fund your Peach Escrow wallet via M-Pesa.</p>
+              <p className="text-xs text-white/90 mt-1">Directly fund your AddSell Escrow wallet via M-Pesa.</p>
             </div>
 
             <form onSubmit={handleMpesaDepositSubmit} className="p-5 space-y-4">

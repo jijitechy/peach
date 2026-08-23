@@ -2,7 +2,7 @@
   "entities": {
     "User": {
       "title": "User",
-      "description": "Represents a safe commerce user or admin on Peach.",
+      "description": "Represents a safe commerce user or admin on AddSell.",
       "type": "object",
       "properties": {
         "id": { "type": "string", "description": "Unique identifier of the user matches uid." },

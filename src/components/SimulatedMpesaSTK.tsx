@@ -80,11 +80,11 @@ export default function SimulatedMpesaSTK({
 
           <div className="mt-4 text-xs font-mono space-y-2 text-gray-600">
             <p className="font-sans leading-tight">
-              Do you want to deposit <span className="font-bold text-gray-900">KES {amount.toLocaleString()}</span> to Peach Escrow for <span className="italic font-semibold text-gray-900">"{listingTitle}"</span>?
+              Do you want to deposit <span className="font-bold text-gray-900">KES {amount.toLocaleString()}</span> to AddSell Escrow for <span className="italic font-semibold text-gray-900">"{listingTitle}"</span>?
             </p>
             <div className="bg-gray-50 p-2 rounded border border-dashed border-gray-200">
               <p className="text-[10px]">Mobile: <strong className="text-gray-800">{phone}</strong></p>
-              <p className="text-[10px]">Recipient: <strong className="text-gray-800">Peach Trust Vault</strong></p>
+              <p className="text-[10px]">Recipient: <strong className="text-gray-800">AddSell Trust Vault</strong></p>
             </div>
             <p className="text-center text-[10px] text-gray-400 font-sans mt-2">Enter your 4-digit M-Pesa PIN:</p>
           </div>

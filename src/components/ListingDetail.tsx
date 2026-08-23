@@ -50,7 +50,7 @@ export default function ListingDetail({
   const [showMpesaPrompt, setShowMpesaPrompt] = useState<boolean>(false);
   const [mpesaPhone, setMpesaPhone] = useState<string>("0712345678");
   const [mpesaError, setMpesaError] = useState<string>("");
-  const [deliveryOption, setDeliveryOption] = useState<string>("Peach Smart Express");
+  const [deliveryOption, setDeliveryOption] = useState<string>("AddSell Smart Express");
   const [deliveryAddress, setDeliveryAddress] = useState<string>("");
   const [deliveryFee, setDeliveryFee] = useState<number>(350);
 
@@ -413,9 +413,9 @@ export default function ListingDetail({
       // Client-side dynamic robust fallback
       let fallbackText = "";
       if (selectedNetwork === "facebook") {
-        fallbackText = `🔥 AMAZING VALUE ALERT on Peach Kenya! 🔥\n\nLooking for a premium ${listing.title}? We've got you covered! Located in ${listing.location || "Nairobi"}, this item is in ${listing.condition || "Excellent"} condition and is available right now.\n\n💰 Price: KES ${(listing.currentBid || listing.startingBid || 1000).toLocaleString()} (${listing.allowBidding !== false ? "Bidding open!" : "Direct Buy Now"})\n🔒 Safe & Guarded P2P Escrow - Your money stays locked until you inspect and approve delivery!\n\n👇 Bid / Buy directly here:\n🔗 ${deepLinkUrl}\n\n#PeachMarketplace #KenyaDeals #SecureEscrow #NairobiShopping`;
+        fallbackText = `🔥 AMAZING VALUE ALERT on AddSell Kenya! 🔥\n\nLooking for a premium ${listing.title}? We've got you covered! Located in ${listing.location || "Nairobi"}, this item is in ${listing.condition || "Excellent"} condition and is available right now.\n\n💰 Price: KES ${(listing.currentBid || listing.startingBid || 1000).toLocaleString()} (${listing.allowBidding !== false ? "Bidding open!" : "Direct Buy Now"})\n🔒 Safe & Guarded P2P Escrow - Your money stays locked until you inspect and approve delivery!\n\n👇 Bid / Buy directly here:\n🔗 ${deepLinkUrl}\n\n#AddSellMarketplace #KenyaDeals #SecureEscrow #NairobiShopping`;
       } else {
-        fallbackText = `[Video cue: Show high-energy close up of the ${listing.title} with some cool music 🎵]\n\n"Weh! Cheki hii crazy deal kwenye Peach! 🤩 This absolute gem is in ${listing.condition || "Superb"} condition! Inapatikana hapa hapa ${listing.location || "Nairobi"}. Form ni gani? Bidding starts at just KES ${(listing.currentBid || listing.startingBid || 1000).toLocaleString()}! 🚀"\n\n[Video cue: Tap on the phone to show fast Safaricom M-Pesa secure escrow transaction]\n\nCaption:\nLooking for high aura deals? 🤫 Skip the drama and trade with 100% Peach Escrow protection! Fast shipping countrywide. Link in bio! 📲\n🔗 ${deepLinkUrl}\n\n#TikTokKenya #PeachEscrow #Chonjo #Aura #SafeShopping #KenyaFinest`;
+        fallbackText = `[Video cue: Show high-energy close up of the ${listing.title} with some cool music 🎵]\n\n"Weh! Cheki hii crazy deal kwenye AddSell! 🤩 This absolute gem is in ${listing.condition || "Superb"} condition! Inapatikana hapa hapa ${listing.location || "Nairobi"}. Form ni gani? Bidding starts at just KES ${(listing.currentBid || listing.startingBid || 1000).toLocaleString()}! 🚀"\n\n[Video cue: Tap on the phone to show fast Safaricom M-Pesa secure escrow transaction]\n\nCaption:\nLooking for high aura deals? 🤫 Skip the drama and trade with 100% AddSell Escrow protection! Fast shipping countrywide. Link in bio! 📲\n🔗 ${deepLinkUrl}\n\n#TikTokKenya #AddSellEscrow #Chonjo #Aura #SafeShopping #KenyaFinest`;
       }
       setShareCaption(fallbackText);
     } finally {
@@ -467,7 +467,7 @@ export default function ListingDetail({
     return (
       <div className="flex flex-col items-center justify-center p-20 text-gray-400">
         <div className="w-8 h-8 rounded-full border-t-2 border-brand-primary animate-spin mb-3"></div>
-        <p className="text-xs font-mono">Fetching Peach listing details...</p>
+        <p className="text-xs font-mono">Fetching AddSell listing details...</p>
       </div>
     );
   }
@@ -619,7 +619,7 @@ export default function ListingDetail({
             </div>
             <div className="flex items-center gap-2 mb-2">
               <Sparkles className="w-5 h-5 text-indigo-600 animate-pulse" />
-              <h3 className="font-display font-bold text-sm text-gray-800">Peach AI Market Valuation</h3>
+              <h3 className="font-display font-bold text-sm text-gray-800">AddSell AI Market Valuation</h3>
             </div>
             <p className="text-xs text-gray-500">
               Get an accurate, VC-grade estimate of this premium item's market value in Nairobi based on condition, historical demand, and recommended starting bids.
@@ -768,7 +768,7 @@ export default function ListingDetail({
                           />
                         </div>
                         <p className="text-[9px] text-gray-400 leading-normal">
-                          The Peach escrow proxy engine will automatically match lower competing bids by raising your offer by KES {(listing.minIncrement || 500).toLocaleString()} increments up to your maximum bid ceiling.
+                          The AddSell escrow proxy engine will automatically match lower competing bids by raising your offer by KES {(listing.minIncrement || 500).toLocaleString()} increments up to your maximum bid ceiling.
                         </p>
                       </div>
                     )}
@@ -790,7 +790,7 @@ export default function ListingDetail({
                   <div>
                     <h4 className="text-[11px] font-bold text-emerald-900 uppercase">100% Escrow Protection</h4>
                     <p className="text-[10px] text-emerald-800 leading-snug">
-                      Your money is safe on Peach. Placing a bid does not charge you. Once won, funds are securely held until delivery confirmation.
+                      Your money is safe on AddSell. Placing a bid does not charge you. Once won, funds are securely held until delivery confirmation.
                     </p>
                   </div>
                 </div>
@@ -827,16 +827,16 @@ export default function ListingDetail({
                     <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block">1. Select Courier Option</label>
                     
                     <div 
-                      onClick={() => handleDeliveryOptionChange("Peach Smart Express", 350)}
+                      onClick={() => handleDeliveryOptionChange("AddSell Smart Express", 350)}
                       className={`p-2.5 rounded-xl border cursor-pointer select-none transition-all flex items-center justify-between ${
-                        deliveryOption === "Peach Smart Express"
+                        deliveryOption === "AddSell Smart Express"
                           ? "bg-orange-50 border-[#f97316] ring-1 ring-orange-500/10"
                           : "bg-white border-gray-200 hover:bg-gray-100"
                       }`}
                     >
                       <div>
                         <div className="text-xs font-bold text-gray-800 flex items-center gap-1">
-                          <Truck className="w-3.5 h-3.5 text-brand-primary" /> Peach Smart Express
+                          <Truck className="w-3.5 h-3.5 text-brand-primary" /> AddSell Smart Express
                         </div>
                         <p className="text-[10px] text-gray-400 mt-0.5">Assigned boda boda rider. Delivered within 3-4 hours.</p>
                       </div>
@@ -1096,7 +1096,7 @@ export default function ListingDetail({
                       <span>Security Arbitration Active</span>
                     </div>
                     <p className="text-[10px] text-red-700 leading-normal">
-                      This transaction has been frozen. Funds will remain safely held in our custody vault until a Peach resolution officer checks the physical item matches description.
+                      This transaction has been frozen. Funds will remain safely held in our custody vault until a AddSell resolution officer checks the physical item matches description.
                     </p>
                   </div>
                 )}
@@ -1107,7 +1107,7 @@ export default function ListingDetail({
                     <div>
                       <h4 className="font-bold">Deal Securely Finalized</h4>
                       <p className="text-[10px] text-emerald-800 leading-normal">
-                        Funds safely released to the seller. Thank you for using Peach - Africa's most secure peer-to-peer auction framework.
+                        Funds safely released to the seller. Thank you for using AddSell - Africa's most secure peer-to-peer auction framework.
                       </p>
                     </div>
                   </div>
@@ -1244,7 +1244,7 @@ export default function ListingDetail({
                 </div>
 
                 <p className="text-[11px] text-gray-650 leading-relaxed font-sans">
-                  Instantly draft viral, high-conversion promotional captions including dynamic deep links to your live Peach listing. Dominate Facebook and TikTok feeds!
+                  Instantly draft viral, high-conversion promotional captions including dynamic deep links to your live AddSell listing. Dominate Facebook and TikTok feeds!
                 </p>
 
                 {/* Network Switching Tabs */}
@@ -1310,7 +1310,7 @@ export default function ListingDetail({
                           <span className={`font-bold block text-[11px] ${selectedNetwork === "facebook" ? "text-gray-800" : "text-white"}`}>
                             {selectedNetwork === "facebook" ? "Facebook Post Mockup" : "TikTok Audio Overlay & Script"}
                           </span>
-                          <span className="text-[9px] text-gray-400 block">AI Engine Draft • Peach Syndication</span>
+                          <span className="text-[9px] text-gray-400 block">AI Engine Draft • AddSell Syndication</span>
                         </div>
                       </div>
 

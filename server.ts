@@ -100,7 +100,7 @@ const SEED_LISTINGS = [
   {
     id: "lst-02",
     title: "Sony PlayStation 5 Console (Disc Edition)",
-    description: "Mint-condition PS5 Console with 1 white dual-sense controller. Purchased in the UK, rarely used. Runs extremely cool and silent, loaded with digital extras. Perfect companion for weekend gaming sessions. Delivery available via Peach express for extra safety.",
+    description: "Mint-condition PS5 Console with 1 white dual-sense controller. Purchased in the UK, rarely used. Runs extremely cool and silent, loaded with digital extras. Perfect companion for weekend gaming sessions. Delivery available via AddSell express for extra safety.",
     category: "Electronics",
     condition: "Like New",
     location: "Mombasa, Nyali",
@@ -214,7 +214,7 @@ const SEED_LISTINGS = [
     winnerId: "usr-demo", // Simulated user has won this!
     winnerName: "You (Mock Investor)",
     escrowStatus: "held_in_escrow", // Held in escrow payments to show flow
-    deliveryOption: "Peach Courier",
+    deliveryOption: "AddSell Courier",
     deliveryFee: 650,
     deliveryAddress: "General Post Office (GPO), Nairobi",
     mpesaPhone: "0712345678",
@@ -813,7 +813,7 @@ app.post("/api/listings/:id/boost", async (req, res) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           access_token: process.env.META_ACCESS_TOKEN,
-          name: `Peach Boost: ${listing.title}`,
+          name: `AddSell Boost: ${listing.title}`,
           objective: 'OUTCOME_TRAFFIC',
           status: 'ACTIVE',
           special_ad_categories: [],
@@ -833,7 +833,7 @@ app.post("/api/listings/:id/boost", async (req, res) => {
         },
         body: JSON.stringify({
           advertiser_id: process.env.TIKTOK_AD_ACCOUNT_ID,
-          campaign_name: `Peach Boost: ${listing.title}`,
+          campaign_name: `AddSell Boost: ${listing.title}`,
           objective_type: 'TRAFFIC',
           budget_mode: 'BUDGET_MODE_DAY',
           budget: boostAmount
@@ -885,7 +885,7 @@ app.post("/api/listings/:id/boost", async (req, res) => {
               price: (l.currentBid || l.startingBid) * 100, // cents
               currency: "KES",
               image_url: l.imageUrl,
-              url: `https://peach.co.ke/listings/${l.id}`
+              url: `https://addsell.co.ke/listings/${l.id}`
             }
           }))
         };
@@ -1200,7 +1200,7 @@ app.post("/api/listings/:id/confirm-payment", async (req, res) => {
     await saveUser(user);
   }
 
-  // Funds successfully moved to Peach Escrow Vault hold
+  // Funds successfully moved to AddSell Escrow Vault hold
   listing.escrowStatus = "held_in_escrow";
   listing.mpesaReceipt = receiptCode;
   listing.trackingCode = trackingCode;
@@ -1228,7 +1228,7 @@ app.post("/api/listings/:id/dispatch", async (req, res) => {
   listing.escrowStatus = "shipped";
   await saveListing(listing);
 
-  res.json({ status: "success", message: "Item successfully picked up by Peach courier and in-transit to buyer." });
+  res.json({ status: "success", message: "Item successfully picked up by AddSell courier and in-transit to buyer." });
 });
 
 // Deliver Item (Rider Simulation)
@@ -1264,7 +1264,7 @@ app.post("/api/listings/:id/release-escrow", async (req, res) => {
   });
 });
 
-// Dispute Peach Transaction (Escrow Pause)
+// Dispute AddSell Transaction (Escrow Pause)
 app.post("/api/listings/:id/dispute", async (req, res) => {
   const currentListings = await fetchListings();
   const listingIndex = currentListings.findIndex(l => l.id === req.params.id);
@@ -1276,7 +1276,7 @@ app.post("/api/listings/:id/dispute", async (req, res) => {
   listing.escrowStatus = "disputed";
   await saveListing(listing);
 
-  res.json({ status: "success", message: "Transaction disputed. Peach Arbitration Board notified. Funds remain frozen in escrow." });
+  res.json({ status: "success", message: "Transaction disputed. AddSell Arbitration Board notified. Funds remain frozen in escrow." });
 });
 
 // Gemini Endpoint: Generate Smart Marketplace Description
@@ -1289,7 +1289,7 @@ app.post("/api/gemini/generate-description", async (req, res) => {
   }
 
   const { title, category, condition, location, image } = req.body;
-  const prompt = `You are a professional conversion-rate copywriter for "Peach", a venture-backed auction and instant-checkout marketplace for both new and premium pre-owned items in Kenya.
+  const prompt = `You are a professional conversion-rate copywriter for "AddSell", a venture-backed auction and instant-checkout marketplace for both new and premium pre-owned items in Kenya.
 Write a hyper-compelling, professional, and visually formatted search-engine optimized (SEO) product description for a listing with these details:
 - Title: ${title}
 - Category: ${category}
@@ -1299,7 +1299,7 @@ Write a hyper-compelling, professional, and visually formatted search-engine opt
 The description must satisfy these guidelines:
 1. Include a short, bold introductory paragraph highlighting the premium value of this item (whether brand new or wonderfully pre-owned).
 2. Outline key selling points or specs in bullet points.
-3. Call out why bidding on this item is safe due to Peach's secure Escrow vault protection and instant Safaricom M-Pesa convenience.
+3. Call out why bidding on this item is safe due to AddSell's secure Escrow vault protection and instant Safaricom M-Pesa convenience.
 4. Keep the tone friendly, modern, and trustworthy. Use localized Kenyan vibes appropriately (e.g., Nyali, Kilimani, Westlands).
 Write exactly 3 focused sections. Keep it under 250 words total. Do not use markdown tags outside standard bold and bullet points.`;
 
@@ -1340,15 +1340,15 @@ app.post("/api/gemini/generate-social-caption", async (req, res) => {
   if (!isGeminiAvailable || !ai) {
     let caption = "";
     if (network === "facebook") {
-      caption = `🔥 AMAZING VALUE ALERT on Peach Kenya! 🔥\n\nLooking for a premium ${title}? We've got you covered! Located in ${location || "Nairobi"}, this item is in ${condition || "Excellent"} condition and is available right now.\n\n💰 Price: KES ${Number(price).toLocaleString()} (${allowBidding !== false ? "Bidding open!" : "Direct Buy Now"})\n🔒 Safe & Guarded P2P Escrow - Your money stay locked until you inspect and approve delivery!\n\n👇 Bid / Buy directly here:\n🔗 ${deepLink || "https://peach.co.ke"}\n\n#PeachMarketplace #KenyaDeals #SecureEscrow #NairobiShopping`;
+      caption = `🔥 AMAZING VALUE ALERT on AddSell Kenya! 🔥\n\nLooking for a premium ${title}? We've got you covered! Located in ${location || "Nairobi"}, this item is in ${condition || "Excellent"} condition and is available right now.\n\n💰 Price: KES ${Number(price).toLocaleString()} (${allowBidding !== false ? "Bidding open!" : "Direct Buy Now"})\n🔒 Safe & Guarded P2P Escrow - Your money stay locked until you inspect and approve delivery!\n\n👇 Bid / Buy directly here:\n🔗 ${deepLink || "https://addsell.co.ke"}\n\n#AddSellMarketplace #KenyaDeals #SecureEscrow #NairobiShopping`;
     } else {
-      caption = `[Video cue: Show high-energy close up of the ${title} with some cool music 🎵]\n\n"Weh! Cheki hii crazy deal kwenye Peach! 🤩 This absolute gem is in ${condition || "Superb"} condition! Inapatikana hapa hapa ${location || "Nairobi"}. Form ni gani? Bidding starts at just KES ${Number(price).toLocaleString()}! 🚀"\n\n[Video cue: Tap on the phone to show fast Safaricom M-Pesa secure escrow transaction]\n\nCaption:\nLooking for high aura deals? 🤫 Skip the drama and trade with 100% Peach Escrow protection! Fast shipping countrywide. Link in bio! 📲\n🔗 ${deepLink || "https://peach.co.ke"}\n\n#TikTokKenya #PeachEscrow #Chonjo #Aura #SafeShopping #KenyaFinest`;
+      caption = `[Video cue: Show high-energy close up of the ${title} with some cool music 🎵]\n\n"Weh! Cheki hii crazy deal kwenye AddSell! 🤩 This absolute gem is in ${condition || "Superb"} condition! Inapatikana hapa hapa ${location || "Nairobi"}. Form ni gani? Bidding starts at just KES ${Number(price).toLocaleString()}! 🚀"\n\n[Video cue: Tap on the phone to show fast Safaricom M-Pesa secure escrow transaction]\n\nCaption:\nLooking for high aura deals? 🤫 Skip the drama and trade with 100% AddSell Escrow protection! Fast shipping countrywide. Link in bio! 📲\n🔗 ${deepLink || "https://addsell.co.ke"}\n\n#TikTokKenya #AddSellEscrow #Chonjo #Aura #SafeShopping #KenyaFinest`;
     }
     return res.json({ caption });
   }
 
   const prompt = network === "tiktok" 
-    ? `You are a viral TikTok video content director and scriptwriter for Peach, a secure venture-backed peer-to-peer marketplace in Kenya.
+    ? `You are a viral TikTok video content director and scriptwriter for AddSell, a secure venture-backed peer-to-peer marketplace in Kenya.
 Write a highly energetic viral TikTok caption and video storyboard prompt for this item:
 - Title: ${title}
 - Category: ${category}
@@ -1362,9 +1362,9 @@ Guidelines:
 2. Include video script / scene cue ideas, e.g. '[Video cue: Camera zooms on ${title} showing pristine detail...]'.
 3. Use cool local Kenyan slang/trends (sheng like 'Mbogi', 'Chonjo', 'Form ni gani', 'Kuwaka', 'Inaweza', 'Odi', 'Riaaa') to make it fun and youth-focused.
 4. Mention clearly that they can buy securely with deep link or link in bio: '${deepLink}'.
-5. Include trending hashtags like #TikTokKenya #PeachEscrow #Chonjo #Aura #SafeAuction.
+5. Include trending hashtags like #TikTokKenya #AddSellEscrow #Chonjo #Aura #SafeAuction.
 6. Keep the style short, visual, and highly dynamic. Output only the caption writeup directly without extra explanations.`
-    : `You are a professional conversion-rate social media Manager for Peach, the premium escrow-backed peer-to-peer marketplace in Kenya.
+    : `You are a professional conversion-rate social media Manager for AddSell, the premium escrow-backed peer-to-peer marketplace in Kenya.
 Write a lively, highly engaging Facebook post/caption to promote this item:
 - Title: ${title}
 - Category: ${category}
@@ -1375,10 +1375,10 @@ Write a lively, highly engaging Facebook post/caption to promote this item:
 
 Guidelines:
 1. Craft a punchy opening line that hooks the user immediately using exciting emojis.
-2. Highlight that the transaction is 100% secure with Peach Escrow Protection (funds held safely in escrow until delivery is verified by buyer).
+2. Highlight that the transaction is 100% secure with AddSell Escrow Protection (funds held safely in escrow until delivery is verified by buyer).
 3. Frame the item as an incredible deal in Kenya. Include local community references (like Nairobi, Mombasa, Westlands, Kilimani, Kisumu) to make it highly relatable.
 4. Integrate the provided direct deep link clearly: '${deepLink}'.
-5. Add relevant hashtags (e.g., #PeachMarketplace, #NairobiDeals, #SafeEscrow) so it looks polished and professional.
+5. Add relevant hashtags (e.g., #AddSellMarketplace, #NairobiDeals, #SafeEscrow) so it looks polished and professional.
 6. Keep it friendly, modern, and trustworthy. Keep it under 180 words. Output only the caption writeup directly without extra descriptions or side commentaries.`;
 
   try {
@@ -1404,7 +1404,7 @@ app.post("/api/gemini/evaluate-item", async (req, res) => {
       recommendedStartingBid: recommendedStart,
       estimatedEscrowFee: 250,
       marketVibe: "High Demand",
-      expertOpinion: "Electronics of this scale sell rapidly in Lavington and Kilimani. Set your starting bid lower to encourage bidding wars, as premium items (both new and pre-owned) with a reserve usually fetch up to 30% more on Peach!",
+      expertOpinion: "Electronics of this scale sell rapidly in Lavington and Kilimani. Set your starting bid lower to encourage bidding wars, as premium items (both new and pre-owned) with a reserve usually fetch up to 30% more on AddSell!",
       brand: "HP",
       specs: "Core i7 Quad-Core, 16GB Dual-Channel DDR4 RAM, 512GB NVMe M.2 SSD",
       size: "14.0 Inch Full HD IPS Screen, 1.48 kg Weight",
@@ -1481,7 +1481,7 @@ app.post("/api/gemini/autofill-listing-details", async (req, res) => {
       title: title,
       category: category,
       condition: condition,
-      description: `Premium, verified locally listed ${title} located near ${location}. Meticulously scrutinized by Peach escrow safety team. Instant purchase or bidding in Kenyan Shillings (KES).`,
+      description: `Premium, verified locally listed ${title} located near ${location}. Meticulously scrutinized by AddSell escrow safety team. Instant purchase or bidding in Kenyan Shillings (KES).`,
       brand: "Generic/Premium",
       specs: "Superb condition, certified by local expert team.",
       size: "Standard Size",
@@ -1493,13 +1493,13 @@ app.post("/api/gemini/autofill-listing-details", async (req, res) => {
   }
 
   const { title, category, condition, location, image } = req.body;
-  const prompt = `You are an expert AI marketplace listing officer for "Peach", a secure auction platform in Kenya.
+  const prompt = `You are an expert AI marketplace listing officer for "AddSell", a secure auction platform in Kenya.
 Analyze the provided parameters (Title: "${title || "Not specified"}", Category: "${category || "Not specified"}", Condition: "${condition || "Not specified"}", Location: "${location || "Nairobi"}") and any attached visual image.
 
 If an image is attached, inspect the image to:
 1. Identify the product: brand, model, visual state, color. If title is empty, generate an appropriate title.
 2. Deduce the most appropriate category (Must be strictly one of: 'Electronics', 'Fashion', 'Books & Hobbies', 'Services', 'Vehicles & Sports').
-3. Draft a beautiful, professional market-grade description. Encourage trust by calling out security via Peach Escrow.
+3. Draft a beautiful, professional market-grade description. Encourage trust by calling out security via AddSell Escrow.
 4. Estimate logical starting auction value in KES (Kenyan Shillings) appropriate for pre-owned or new items in the local Nairobi market. Recommend reserve, minimum bid increment (usually 500 or 1000), brand, specs, standard size/dimensions, and estimated warranty.
 
 If NO image is attached, use the specified Title/details to generate the complete dataset, filling in all missing fields smartly with realistic marketplace defaults.
@@ -1585,7 +1585,7 @@ async function startServer() {
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Peach Fullstack Server listening at http://0.0.0.0:${PORT}`);
+    console.log(`AddSell Fullstack Server listening at http://0.0.0.0:${PORT}`);
   });
 }
 if (!process.env.VERCEL) {

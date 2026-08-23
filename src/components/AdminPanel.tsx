@@ -358,7 +358,7 @@ export default function AdminPanel({ currentUser, onRefreshListings }: AdminPane
           location: "Nairobi, Westlands",
           seller: {
             id: "system-sponsor",
-            name: "PEACH ADVERTISER",
+            name: "ADDSELL ADVERTISER",
             rating: 5.0,
             avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=150&q=80"
           },
@@ -746,7 +746,7 @@ export default function AdminPanel({ currentUser, onRefreshListings }: AdminPane
                   onClick={() => setAdImageUrl("https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80")}
                   className="text-[9px] text-[#ea580c] font-bold block hover:underline"
                 >
-                  ⚡ Use Peach Tech Product Boost Placeholder Ad
+                  ⚡ Use AddSell Tech Product Boost Placeholder Ad
                 </button>
               </div>
 

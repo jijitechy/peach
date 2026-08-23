@@ -154,11 +154,11 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
           
           <div className="flex justify-center mb-2">
             <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#f97316] to-[#ea580c] shadow-lg ring-4 ring-white/20 overflow-hidden flex items-center justify-center">
-              <img src="/peachlogo.png" alt="Peach" className="w-full h-full object-cover scale-110" />
+              <img src="/addselllogo.png" alt="AddSell" className="w-full h-full object-cover scale-110" />
             </div>
           </div>
           <h2 className="text-lg font-display font-extrabold tracking-tight">
-            {isLogin ? 'Sign In to Peach' : 'Create Your Peach Account'}
+            {isLogin ? 'Sign In to AddSell' : 'Create Your AddSell Account'}
           </h2>
           <p className="text-[11px] text-white/85 mt-1 max-w-xs mx-auto">
             Kenya's trusted marketplace with M-Pesa Escrow protection.
@@ -384,7 +384,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
                 disabled={isSubmitting}
                 className="flex-[2] py-2.5 bg-gray-950 hover:bg-[#ea580c] disabled:bg-gray-400 text-white font-bold uppercase tracking-wider rounded-xl shadow-xs hover:shadow-md transition-all text-[10px] cursor-pointer"
               >
-                {isSubmitting ? 'Processing...' : (isLogin ? 'Log into Peach' : 'Sign Up')}
+                {isSubmitting ? 'Processing...' : (isLogin ? 'Log into AddSell' : 'Sign Up')}
               </button>
             </div>
 
@@ -395,7 +395,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
             <span className="flex items-center gap-1">
               <ShieldCheck className="w-3 h-3 text-emerald-600" /> Safe Escrow Protection
             </span>
-            <span>Peach Marketplace · Kenya</span>
+            <span>AddSell Marketplace · Kenya</span>
           </div>
 
         </div>

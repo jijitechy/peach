@@ -54,7 +54,7 @@ const SEED_LISTINGS: Listing[] = [
     trackingCode: null,
     imageUrl: "https://images.unsplash.com/photo-1606813907291-d86efa9b94db?auto=format&fit=crop&w=600&q=80",
     bidHistory: [
-      { id: "bid-21", listingId: "lst-02", bidderName: "Joji Techy", amount: 56000, timestamp: new Date().toISOString(), location: "Mombasa", notes: "Peach escrow is perfect setup" }
+      { id: "bid-21", listingId: "lst-02", bidderName: "Joji Techy", amount: 56000, timestamp: new Date().toISOString(), location: "Mombasa", notes: "AddSell escrow is perfect setup" }
     ]
   },
   {
@@ -111,7 +111,7 @@ const SEED_LISTINGS: Listing[] = [
   {
     id: "lst-ad-01",
     title: "Kenya Airways Flight Campaign Deal",
-    description: "Fly to Mombasa, Nyali, or Kisumu with KQ Pride of Africa campaigns. Claim exclusive flight discounts hosted direct via Peach premium corporate sponsors.",
+    description: "Fly to Mombasa, Nyali, or Kisumu with KQ Pride of Africa campaigns. Claim exclusive flight discounts hosted direct via AddSell premium corporate sponsors.",
     category: "Services",
     condition: "New",
     location: "Nairobi, Westlands",
@@ -138,15 +138,15 @@ const SEED_LISTINGS: Listing[] = [
 ];
 
 export function initLocalStorageDb() {
-  if (!localStorage.getItem("peach_listings")) {
-    localStorage.setItem("peach_listings", JSON.stringify(SEED_LISTINGS));
+  if (!localStorage.getItem("addsell_listings")) {
+    localStorage.setItem("addsell_listings", JSON.stringify(SEED_LISTINGS));
   }
 }
 
 export function getLocalListings(): Listing[] {
   initLocalStorageDb();
   try {
-    const raw = localStorage.getItem("peach_listings");
+    const raw = localStorage.getItem("addsell_listings");
     return raw ? JSON.parse(raw) : SEED_LISTINGS;
   } catch (e) {
     return SEED_LISTINGS;
@@ -154,7 +154,7 @@ export function getLocalListings(): Listing[] {
 }
 
 export function saveLocalListings(listings: Listing[]) {
-  localStorage.setItem("peach_listings", JSON.stringify(listings));
+  localStorage.setItem("addsell_listings", JSON.stringify(listings));
 }
 
 export function createLocalListing(listing: Listing) {
@@ -277,13 +277,13 @@ const SEED_USERS = [
   { id: 'usr-02', username: 'demo@gmail.com', name: 'Mock Investor', phone: '0722334455', role: 'buyer', balance: 29500, avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80' },
   { id: 'usr-03', username: 'jane@gmail.com', name: 'Jane Mwangi', phone: '0733445566', role: 'seller', balance: 95000, avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80' },
   { id: 'usr-04', username: 'wycliffe@gmail.com', name: 'Wycliffe', phone: '0744556677', role: 'buyer', balance: 154000, avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=150&q=80' },
-  { id: 'usr-admin', username: 'admin@gmail.com', name: 'Peach Administrator', phone: '0700000000', role: 'admin', balance: 5000000, avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=150&q=80' }
+  { id: 'usr-admin', username: 'admin@gmail.com', name: 'AddSell Administrator', phone: '0700000000', role: 'admin', balance: 5000000, avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=150&q=80' }
 ];
 
 export function getLocalUsers() {
-  const raw = localStorage.getItem("peach_simulated_users");
+  const raw = localStorage.getItem("addsell_simulated_users");
   if (!raw) {
-    localStorage.setItem("peach_simulated_users", JSON.stringify(SEED_USERS));
+    localStorage.setItem("addsell_simulated_users", JSON.stringify(SEED_USERS));
     return SEED_USERS;
   }
   return JSON.parse(raw);
@@ -292,13 +292,13 @@ export function getLocalUsers() {
 export function addLocalUser(user: any) {
   const list = getLocalUsers();
   list.push(user);
-  localStorage.setItem("peach_simulated_users", JSON.stringify(list));
+  localStorage.setItem("addsell_simulated_users", JSON.stringify(list));
 }
 
 export function deleteLocalUser(userId: string) {
   const list = getLocalUsers();
   const filtered = list.filter((u: any) => u.id !== userId);
-  localStorage.setItem("peach_simulated_users", JSON.stringify(filtered));
+  localStorage.setItem("addsell_simulated_users", JSON.stringify(filtered));
 }
 
 export function updateLocalUserBalance(userId: string, newBalance: number) {
@@ -306,6 +306,6 @@ export function updateLocalUserBalance(userId: string, newBalance: number) {
   const index = list.findIndex((u: any) => u.id === userId);
   if (index !== -1) {
     list[index].balance = newBalance;
-    localStorage.setItem("peach_simulated_users", JSON.stringify(list));
+    localStorage.setItem("addsell_simulated_users", JSON.stringify(list));
   }
 }
